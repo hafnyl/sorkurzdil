@@ -1,11 +1,11 @@
-import { CORoffsets, palette, piece, tileModel } from './roms.ts'
+import { palette, tileModel } from './roms.ts'
 import { colour3, modular, vector2 } from './basics.ts'
 import { game, gameManager } from './sorkurzdil.ts';
-import visualFlags from './visualflags.ts';
+import gameFlags from './visualflags.ts';
 import { board, matrix, tile } from './board.ts';
 import { simpleKickType, simplifyKickType } from './rotationsystems.ts';
 import { cameraMode } from './config.ts';
-import { use } from 'react';
+import { CORoffsets, piece } from './pieces.ts'
 
 var imagesCache:{[key:string]:HTMLImageElement} = {};
 var loading:{[key:string]:boolean} = {};
@@ -50,7 +50,7 @@ export default class MatrixRendering {
 
     gameManager:gameManager;
     game:game;
-    flags:visualFlags;
+    flags:gameFlags;
     board:board;
 
     canvas:HTMLCanvasElement;
@@ -218,6 +218,25 @@ export default class MatrixRendering {
 
         this.ctx.globalAlpha = 1
         this.ctx.fillStyle = palette.one.toHex();
+
+        if(!this.game.gameOver){
+            var danger = this.board.matrix.GetEffectiveHeight() - this.board.matrix.height + 3
+            var dangercolour = palette.two.toHex()
+
+            if(this.gameManager.movementManager.Grounded() && this.gameManager.PlacementCouldKill()){
+                dangercolour = palette.tri.toHex()
+                danger *= 3
+            }
+            if(this.gameManager.movementManager.DropHeight().y == -1 && this.gameManager.PlacementCouldKill(vector2.down)){
+                dangercolour = palette.tri.toHex()
+                danger *= 2
+            }
+
+            if(danger > 0){
+                this.ctx.fillStyle = Math.sin(Date.now() / 1000 * 3 * danger) > 0 ? dangercolour : palette.zro.toHex()
+            }
+        }
+
         this.FillRect(_drawnMatrix.flip().div(2),_drawnMatrix)
         this.ctx.fillStyle = palette.zro.toHex();
         this.FillRect(_drawnMatrix.flip().div(2).add(this.framewidth),_drawnMatrix.sub(this.framewidth.mul(2)))
@@ -400,17 +419,20 @@ export default class MatrixRendering {
     DrawHealth(){
         const _drawnMatrix = this.drawnMatrix();
         
-        if(this.game.health >16)
+        if(this.game.meter >16)
             this.ctx.fillStyle = palette.b2b2b.toHex();
         else
             this.ctx.fillStyle = palette.b2b.toHex();
+        if(this.game.meter >20)
+            this.ctx.fillStyle = palette.b2b2b2b.toHex();
 
-        const healthbar  = this.visualHealth / 16;
+        const healthbar  = this.visualHealth;
 
         const useMatrixY = _drawnMatrix.y / this.matrixzoom;
 
-        const section1 = Math.min(1,healthbar);
-        const section2 = Math.max(0,healthbar - 1) * 4
+        const section1 = Math.min(1,healthbar / 16);
+        const section2 = Math.max(0,Math.min(1,(healthbar - 16) / 4))
+        const section3 = Math.max(0,healthbar - 20)
 
         this.FillRect(
             new vector2(
@@ -423,9 +445,17 @@ export default class MatrixRendering {
         this.FillRect(
             new vector2(
                 -_drawnMatrix.x / 2 - this.meterswidths,
-                -useMatrixY / 2 + (useMatrixY * 4/20) * (1-section2) - this.cameraYtarget*this.boardtilesize.y/this.matrixzoom
+                -useMatrixY / 2 + (useMatrixY * 4/20 - this.b3bmargin) * (1-section2) + this.b3bmargin - this.cameraYtarget*this.boardtilesize.y/this.matrixzoom
             ),
-            new vector2(this.meterswidths,(useMatrixY * 4/20) * section2)
+            new vector2(this.meterswidths,(useMatrixY * 4/20 - this.b3bmargin) * section2)
+        )
+
+        this.FillRect(
+            new vector2(
+                -_drawnMatrix.x / 2 - this.meterswidths,
+                -useMatrixY / 2 - (useMatrixY / 20) * section3 - this.cameraYtarget*this.boardtilesize.y/this.matrixzoom
+            ),
+            new vector2(this.meterswidths,(useMatrixY / 20) * section3)
         )
     }
 
@@ -498,13 +528,14 @@ export default class MatrixRendering {
 
         this.DrawHealth();
         this.DrawGarbageQueue();
-
-        this.DrawHazards();
         
         if(this.game.gameConfig.drawGhost)
             this.DrawGhost();
 
         this.DrawActivePiece();
+
+        if(this.board.matrix.height - this.board.matrix.GetEffectiveHeight() < 3)
+            this.DrawHazards();
     }
 
     cameraYoffset = 0;
@@ -609,7 +640,7 @@ export default class MatrixRendering {
         
         this.matrixangle = lerp(this.matrixangle,this.targetangle,t);
 
-        this.visualHealth = lerp(this.visualHealth,this.game.health,t);
+        this.visualHealth = lerp(this.visualHealth,this.game.meter,t);
         
         if(this.shakeamount > 0.0001){
             const shakeangle = Math.random() * Math.PI * 2

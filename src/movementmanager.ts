@@ -3,10 +3,11 @@ import { board, tile, tileType } from "./board.ts";
 import { Command, gameConfig, simpleScoringSystems, spinDetection, userConfig } from "./config.ts";
 import { gimmickReport } from "./gimmicks.ts";
 import InputManager from "./inputmanager.ts";
-import { levelsGravities, levelsLockTimes, piece } from "./roms.ts";
+import { piece } from "./pieces.ts";
+import { levelsGravities, levelsLockTimes } from "./roms.ts";
 import { SpinType, symmetry } from "./rotationsystems.ts";
 import { game } from "./sorkurzdil.ts";
-import visualFlags from "./visualflags.ts";
+import gameFlags from "./visualflags.ts";
 
 export type lockReport={
     spin:boolean,

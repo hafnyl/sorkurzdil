@@ -1,4 +1,4 @@
-import { bagprefabs, piece, tileModel } from './roms.ts'
+import { tileModel } from './roms.ts'
 import { clone, formatTime, formatTimeSmall, modular, Randomiser, vector2, weightedRoundoff } from './basics.ts'
 import { board, tile, tileType } from './board.ts';
 import rs, { kickSystems, kickType, simplifyKickType } from './rotationsystems.ts';
@@ -6,8 +6,9 @@ import { game } from './sorkurzdil.ts';
 import { ExplodeGrenades, gimmick, MarkBombClears } from './gimmicks.ts';
 import { tileModels } from './roms.ts';
 import { BaseGarbageGenerator, LinesGenerator } from './garbagegeneration.ts';
-import { garbageType } from './garbagelinetypes.ts';
+import { dualGarbageType } from './garbagelinetypes.ts';
 import { BasePieceGenerator } from './piecechoice.ts';
+import { bagprefabs, piece } from './pieces.ts';
 
 export type simplescoring = (_game:game,piecejustplaced:piece,lines:number,spin:boolean,mini:boolean,immobile:boolean,pc:boolean)=>number;
 
@@ -326,7 +327,7 @@ export class gameConfig{
     width=10;
     height=20;
 
-    kickSystem=kickSystems.SRS;
+    kickSystem=kickSystems.techmino;
     pieceChoice=new BasePieceGenerator(bagprefabs.tetrominos);
     queuesize = 5;
     holdsize = 1;
@@ -408,10 +409,9 @@ export class gameConfig{
     garbageChoice:BaseGarbageGenerator|undefined;
     woundsChoice:LinesGenerator|undefined;
     cheeseChoice:LinesGenerator|undefined;
-    garbageType1:garbageType=tile.garbage;
-    garbageType2:garbageType=tile.garbage1;
-    woundsType:garbageType=tile.garbage;
-    cheeseType:garbageType=tile.garbage;
+    garbageType:dualGarbageType=tile.dualGarbage;
+    woundsType:dualGarbageType=tile.dualGarbage;
+    cheeseType:dualGarbageType=tile.dualGarbage;
 
     initialisegarbage:garbagePacket[] = [];
 

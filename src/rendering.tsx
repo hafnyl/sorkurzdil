@@ -1,13 +1,13 @@
-import { palette, colourpossibility, compensations, piece, SafeColour, tileModel } from './roms.ts'
+import { palette, colourpossibility, SafeColour, tileModel, clearNames } from './roms.ts'
 import { colour3, formatTime, modular, vector2 } from './basics.ts'
 import MatrixRendering from './matrixrendering.tsx';
-import visualFlags, { lineclearalert } from './visualflags.ts';
+import gameFlags, { lineclearalert } from './visualflags.ts';
 import { game, gameManager } from './sorkurzdil.ts';
 import { simplifyKickType } from './rotationsystems.ts';
 import { scoreDisplay, scoreDisplays, scoreDisplayType } from './config.ts';
 import particleManager, { curve, rectParticle, textParticle } from './particlemanager.tsx';
 import React, { createElement, ReactElement, RefObject, useImperativeHandle, useRef, useState } from 'react';
-import { clearNames } from './roms.ts';
+import { compensations, piece } from './pieces.ts';
 
 function FDecay(x:number){
     return 1 - Math.exp(-x/32);
@@ -42,7 +42,7 @@ export class rendering {
 
     gameManager:gameManager;
     game:game;
-    flags:visualFlags;
+    flags:gameFlags;
 
     uiCanvas:HTMLCanvasElement;
     matrixCanvas:HTMLCanvasElement;

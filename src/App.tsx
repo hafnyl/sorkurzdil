@@ -1,5 +1,6 @@
 import './App.css';
-import { bagprefabs, palette, piece } from './roms.ts';
+import { bagprefabs, piece } from './pieces.ts';
+import { palette } from './roms.ts';
 import { game, gameManager } from './sorkurzdil.ts'
 import GameRenderer, {rendering} from './rendering.tsx';
 import React, { useRef, useEffect, RefObject, KeyboardEvent, useState, Component, ReactElement } from 'react';
@@ -19,7 +20,6 @@ const FPS = 120;
 let _gameConfig = new gameConfig()
 let _userConfig = new userConfig()
 
-_gameConfig.kickSystem = kickSystems.techmino;
 _gameConfig.debug = true;
 
 //_gameConfig.pieceSpawnMargin = 8
@@ -28,16 +28,7 @@ _gameConfig.debug = true;
 //_gameConfig.earlylock = [AdhereToGlue]
 
 //_gameConfig.Splice(configs.bombs)
-_gameConfig.garbageChoice = new LinesGenerator(new NwideGarbage(2))
-_gameConfig.wave = [
-  new garbagePacket(1),
-  new garbagePacket(1),
-  new garbagePacket(2),
-  new garbagePacket(4),
-]
-_gameConfig.waveinterval = 4000
-_gameConfig.garbageripen = 8000
-_gameConfig.wavetype = wavetype.ontimer
+
 
 //_gameConfig.pieceChoice = pieceChoices.bags(bagprefabs.tetrominosPlusGrenade)
 
@@ -122,9 +113,9 @@ function Update(canvas:HTMLCanvasElement,timestamp,deltaTime){
 
   ctx.fillStyle = palette.one.toHex();
   ctx.textAlign = "start"; 
-  ctx.font = "italic 128px Bytesized";
+  ctx.font = "bold 128px Bytesized";
   ctx.letterSpacing = Math.sin((timestamp - starttime)/3000)**4 * 128 + "px"
-  ctx.fillText("Sulfir |",canvas.width/2-1600,canvas.height/2-600);
+  ctx.fillText("Sul|fir ",canvas.width/2-1600,canvas.height/2-600);
 }
 
 function App() {

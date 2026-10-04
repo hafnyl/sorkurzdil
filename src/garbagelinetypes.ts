@@ -2,12 +2,11 @@ import { Randomiser } from "./basics";
 import { tile, tileType } from "./board";
 import { tileModels } from "./roms";
 
-export type garbageType = ()=>tile;
-export type garbageGenerator = Generator<tile[], never, unknown>
-export type garbageGeneratorInitiator = (_garbageType:garbageType,width: number) => garbageGenerator
+export type dualGarbageType = (alt:boolean)=>tile;
 
 export class BaseGarbageLineGenerator{
     randomiser:Randomiser;
+    altskin:boolean=false;
     constructor(){
         this.randomiser = new Randomiser(Date.now())
     }
@@ -16,15 +15,15 @@ export class BaseGarbageLineGenerator{
         this.randomiser = new Randomiser(seed||Date.now())
     }
 
-    Reset(){
-        
+    Reset(altskin:boolean){
+        this.altskin = altskin
     }
 
-    GarbageType(_garbageType:garbageType):tile{
-        return _garbageType();
+    GarbageType(_garbageType:dualGarbageType):tile{
+        return _garbageType(this.altskin);
     }
 
-    Next(_garbageType:garbageType=tile.garbage,width:number):tile[]{
+    Next(_garbageType:dualGarbageType=tile.garbage,width:number):tile[]{
         this.PreNext(_garbageType,width)
         var line:tile[] = []
         for(let i=0; i<width; i++)
@@ -32,7 +31,7 @@ export class BaseGarbageLineGenerator{
         return line
     }
 
-    PreNext(_garbageType:garbageType=tile.garbage,width:number){
+    PreNext(_garbageType:dualGarbageType=tile.garbage,width:number){
         
     }
 }
@@ -42,11 +41,11 @@ export class SwitchGarbageLineGenerator extends BaseGarbageLineGenerator{
         return this.randomiser.next() <= 0.5
     }
 
-    HoleType(_garbageType:garbageType):tile{
+    HoleType(_garbageType:dualGarbageType):tile{
         return new tile();
     }
 
-    Next(_garbageType:garbageType=tile.garbage,width:number):tile[]{
+    Next(_garbageType:dualGarbageType=tile.garbage,width:number):tile[]{
         this.PreNext(_garbageType,width)
         var line:tile[] = []
         for(let i=0; i<width; i++)
@@ -65,7 +64,7 @@ export class HolesGarbageLineGenerator extends SwitchGarbageLineGenerator{
         return [Math.floor(this.randomiser.next()*width)]
     }
 
-    PreNext(_garbageType: garbageType | undefined, width: number): void {
+    PreNext(_garbageType: dualGarbageType | undefined, width: number): void {
         this.holes = this.HoleChoice(width)
     }
 
@@ -77,7 +76,8 @@ export class HolesGarbageLineGenerator extends SwitchGarbageLineGenerator{
 export class MessyGarbage extends HolesGarbageLineGenerator{
     repeat:number|undefined;
 
-    Reset(): void {
+    Reset(altskin:boolean): void {
+        this.altskin = altskin
         this.repeat = undefined
     }
 
@@ -95,7 +95,8 @@ export class MessyGarbage extends HolesGarbageLineGenerator{
 export class StraightGarbage extends HolesGarbageLineGenerator{
     hole:number|undefined
 
-    Reset(): void {
+    Reset(altskin:boolean): void {
+        this.altskin = altskin
         this.hole = undefined
         console.log("reset")
     }
@@ -126,11 +127,12 @@ export class NwideGarbage extends StraightGarbage{
 export class CheckerGarbage extends SwitchGarbageLineGenerator{
     parity:number=0
 
-    Reset(): void {
+    Reset(altskin:boolean): void {
+        this.altskin = altskin
         this.parity = 0
     }
 
-    PreNext(_garbageType: garbageType | undefined, width: number): void {
+    PreNext(_garbageType: dualGarbageType | undefined, width: number): void {
         this.parity++
     }
 
@@ -140,7 +142,7 @@ export class CheckerGarbage extends SwitchGarbageLineGenerator{
 }
 
 export class Damnation extends BaseGarbageLineGenerator{
-    Next(_garbageType:garbageType=tile.garbage,width:number):tile[]{
+    Next(_garbageType:dualGarbageType=tile.garbage,width:number):tile[]{
         var line:tile[] = []
         var choose = this.randomiser.next() < 0.5 ? 6 : 7;
         var left = width;
@@ -152,7 +154,7 @@ export class Damnation extends BaseGarbageLineGenerator{
             }
             else{
                 left--;
-                line[i] = _garbageType();
+                line[i] = _garbageType(this.altskin);
             }
         return line
     }
@@ -166,7 +168,7 @@ export class MultiholeGarbage extends BaseGarbageLineGenerator{
 
     holes:number;
 
-    Next(_garbageType:garbageType=tile.garbage,width:number):tile[]{
+    Next(_garbageType:dualGarbageType=tile.garbage,width:number):tile[]{
         var line:tile[] = []
         var choose = this.holes;
         var left = width;
@@ -178,19 +180,19 @@ export class MultiholeGarbage extends BaseGarbageLineGenerator{
             }
             else{
                 left--;
-                line[i] = _garbageType();
+                line[i] = _garbageType(this.altskin);
             }
         return line
     }
 }
 
 export class OneBlockGarbage extends HolesGarbageLineGenerator{
-    GarbageType(_garbageType: garbageType): tile {
+    GarbageType(_garbageType: dualGarbageType): tile {
         return new tile()
     }
 
-    HoleType(_garbageType: garbageType): tile {
-        return _garbageType();
+    HoleType(_garbageType: dualGarbageType): tile {
+        return _garbageType(this.altskin);
     }
 }
 
@@ -198,11 +200,12 @@ export class SecretGrade extends SwitchGarbageLineGenerator{
     parity=-1;
     pong=-1;
 
-    Reset(){
+    Reset(altskin:boolean){
+        this.altskin = altskin
         this.parity = -1;
     }
 
-    PreNext(_garbageType: garbageType | undefined, width: number): void {
+    PreNext(_garbageType: dualGarbageType | undefined, width: number): void {
         this.parity++;
         const diagonish = this.parity % (width - 1)
         this.pong = (Math.floor(this.parity / (width-1)) % 2 === 0 ? diagonish : (width - 1 - diagonish))
@@ -214,44 +217,44 @@ export class SecretGrade extends SwitchGarbageLineGenerator{
 }
 
 export class Diagonal extends SecretGrade{
-    GarbageType(_garbageType: garbageType): tile {
+    GarbageType(_garbageType: dualGarbageType): tile {
         return new tile()
     }
 
-    HoleType(_garbageType: garbageType): tile {
-        return _garbageType();
+    HoleType(_garbageType: dualGarbageType): tile {
+        return _garbageType(this.altskin);
     }
 }
 
 export class Bombs extends StraightGarbage{
-    HoleType(_garbageType: garbageType): tile {
+    HoleType(_garbageType: dualGarbageType): tile {
         const _tile = new tile(tileModels.bomb);
         _tile.countstoclear = false;
         _tile.tileType = tileType.bomb;
         return _tile
     }
     
-    GarbageType(_garbageType: garbageType): tile {
+    GarbageType(_garbageType: dualGarbageType): tile {
         return tile.hardy()
     }
 }
 
 export class NwideBombs extends NwideGarbage{
-    HoleType(_garbageType: garbageType): tile {
+    HoleType(_garbageType: dualGarbageType): tile {
         const _tile = new tile(tileModels.bomb);
         _tile.countstoclear = false;
         _tile.tileType = tileType.bomb;
         return _tile
     }
     
-    GarbageType(_garbageType: garbageType): tile {
+    GarbageType(_garbageType: dualGarbageType): tile {
         return tile.hardy()
     }
 }
 
 export class Solid extends BaseGarbageLineGenerator{
-    GarbageType(_garbageType: garbageType): tile {
-        const _tile = _garbageType()
+    GarbageType(_garbageType: dualGarbageType): tile {
+        const _tile = _garbageType(this.altskin)
         _tile.countstoclear = false
         _tile.tileType = tileType.solid
         return _tile

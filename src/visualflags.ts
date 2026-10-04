@@ -1,5 +1,5 @@
 import { vector2 } from "./basics.ts";
-import { piece } from "./roms.ts";
+import { piece } from "./pieces.ts";
 
 
 export type lineclearalert={
@@ -18,7 +18,7 @@ export type otheralert={
     info?:any,
 }
 
-export default class visualFlags{
+export default class gameFlags{
     lineclearalerts:lineclearalert[] = [];
     otheralerts:otheralert[] = [];
     nongravitydisplacementthisframe:vector2 = vector2.zero;

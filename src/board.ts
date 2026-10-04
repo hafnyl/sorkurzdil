@@ -1,6 +1,7 @@
-import { piece, tileModel } from './roms.ts'
+import { tileModel } from './roms.ts'
 import { colour3, vector2 } from './basics.ts'
 import { tileModels } from './roms.ts';
+import { piece } from './pieces.ts';
 
 export enum tileType{
     none,
@@ -38,8 +39,8 @@ export class tile{
     return robot
   }
 
-  static garbage1(){
-    const robot = new tile(tileModels.garbage1)
+  static dualGarbage(alt:boolean){
+    const robot = new tile(alt ? tileModels.garbage1 : tileModels.garbage)
     return robot
   }
 

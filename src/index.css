@@ -1,4 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=Bytesized&display=swap');
+@font-face {
+  font-family: 'Bytesized';
+  src: url('/public/Sulfursized-Regular.ttf');
+}
 
 .bytesized-regular {
   font-family: "Bytesized", sans-serif;

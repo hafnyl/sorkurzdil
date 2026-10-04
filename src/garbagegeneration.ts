@@ -1,20 +1,21 @@
 import { Randomiser, vector2 } from "./basics";
 import { board, tile, tileType } from "./board";
-import { BaseGarbageLineGenerator, garbageType } from "./garbagelinetypes";
+import { BaseGarbageLineGenerator, dualGarbageType } from "./garbagelinetypes";
 import { BasePieceGenerator } from "./piecechoice";
-import { piece, tileModels } from "./roms";
+import { tileModels } from "./roms";
 
 export class BaseGarbageGenerator{
+    altskin:boolean=false;
 
     Seed(seed:number){
 
     }
 
-    Reset(){
-
+    Reset(altskin:boolean){
+        this.altskin = altskin
     }
 
-    Spawn(_board:board,_garbageType:garbageType,numberlines:number){
+    Write(_board:board,_garbageType:dualGarbageType,numberlines:number){
         
     }
 }
@@ -31,11 +32,11 @@ export class LinesGenerator extends BaseGarbageGenerator{
         this.currentGenerator.Seed(seed)
     }
 
-    Reset() {
-        this.currentGenerator.Reset()
+    Reset(altskin:boolean) {
+        this.currentGenerator.Reset(altskin)
     }
 
-    Spawn(_board:board,_garbageType:garbageType,numberlines:number){
+    Write(_board:board,_garbageType:dualGarbageType,numberlines:number){
         for (let i = 0; i < numberlines; i++) {
             var newline = this.currentGenerator.Next(_garbageType,_board.matrix.width);
             for(const _tile of newline){
@@ -62,15 +63,11 @@ export class SpecklesGarbage extends BaseGarbageGenerator{
         this.randomiser = new Randomiser(seed)
     }
 
-    Reset() {
-        
-    }
-
     LineEligible(_board:board,y:number):boolean{
         return _board.matrix.CountEmpties(y) > 1
     }
 
-    AddSpeckle(_board:board,_garbageType:garbageType,y:number){
+    AddSpeckle(_board:board,_garbageType:dualGarbageType,y:number){
         const insertat = Math.floor(this.randomiser.next() * _board.matrix.CountEmpties(y))
         var empty = 0
         for(let x=0; x<_board.matrix.width; x++){
@@ -81,7 +78,7 @@ export class SpecklesGarbage extends BaseGarbageGenerator{
                 empty += 1
                 continue
             }
-            const _tile = _garbageType()
+            const _tile = _garbageType(this.altskin)
             _tile.birth = Date.now();
             _tile.isGarbage = true;
             _board.matrix.SetTile(i,_tile)
@@ -89,7 +86,7 @@ export class SpecklesGarbage extends BaseGarbageGenerator{
         }
     }
 
-    Spawn(_board:board,_garbageType:garbageType,numberlines:number){
+    Write(_board:board,_garbageType:dualGarbageType,numberlines:number){
         for (let i = 0; i < numberlines; i++) {
             var y = -1;
             var heightleft = this.height;
@@ -110,7 +107,7 @@ export class SpecklesGarbage extends BaseGarbageGenerator{
     }
 }
 
-export class DebrisGarbage extends BaseGarbageGenerator{
+/*export class DebrisGarbage extends BaseGarbageGenerator{
     pieceChoice:BasePieceGenerator
 
     constructor(pieceChoice:BasePieceGenerator){
@@ -130,7 +127,7 @@ export class DebrisGarbage extends BaseGarbageGenerator{
         return _board.matrix.CountEmpties(y) > 1
     }
 
-    Spawn(_board:board,_garbageType:garbageType,numberlines:number){
+    Write(_board:board,_garbageType:dualGarbageType,numberlines:number){
         for (let i = 0; i < numberlines; i++) {
             var y = -1;
             var heightleft = this.height;
@@ -149,4 +146,4 @@ export class DebrisGarbage extends BaseGarbageGenerator{
             }
         }
     }
-}
+}*/

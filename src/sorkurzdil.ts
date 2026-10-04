@@ -1,22 +1,23 @@
-import { levelsGravities, piece, stridenames } from './roms.ts'
+import { levelsGravities, stridenames } from './roms.ts'
 import { clone, colour3, modular, vector2 } from './basics.ts'
 import { b2btype, cameraMode, Command, gameConfig, garbagePacket, levelling, simplescoring, userConfig, wavetype } from './config.ts';
 import InputManager from './inputmanager.ts'
 import { board, matrix, tile } from './board.ts'
 import MovementManager, { lockReport } from './movementmanager.ts';
-import visualFlags from './visualflags.ts';
+import gameFlags from './visualflags.ts';
 import { ReactElement } from 'react';
 import { gimmickReport } from './gimmicks.ts';
 import { BaseGarbageGenerator, LinesGenerator } from './garbagegeneration.ts';
 import { MessyGarbage, StraightGarbage } from './garbagelinetypes.ts';
 import { BasePieceGenerator } from './piecechoice.ts';
+import { piece } from './pieces.ts';
 
 export class game{
     gameConfig:gameConfig;
     userConfig:userConfig;
     inputManager:InputManager;
     
-    flags:visualFlags = new visualFlags();
+    flags:gameFlags = new gameFlags();
 
     gameOn = false;
     gameOver = false;
@@ -47,7 +48,7 @@ export class game{
 
     b2b = -1;
     combo = -1;
-    health = 0;
+    meter = 0;
 
     piecesTimes:number[] = [];
 
@@ -142,15 +143,15 @@ export class gameManager{
                     break;
                 case Command.SpawnGarbage:
                     if(!_gameConfig.debug)break;
-                    this.SpawnGarbage(1);
+                    this.WriteGarbageToBoard(1);
                     break;
                 case Command.SpawnGarbage4:
                     if(!_gameConfig.debug)break;
-                    this.SpawnGarbage(20);
+                    this.WriteGarbageToBoard(20);
                     break;
                 case Command.SpawnWound:
                     if(!_gameConfig.debug)break;
-                    this.SpawnWound(1);
+                    this.WriteWoundToBoard(1);
                     this.game.flags.otheralerts.push({
                         time: Date.now(),
                         code:"pc",
@@ -293,34 +294,34 @@ export class gameManager{
 
         if(spin || mini || immobile || lines >= 4){
             if(!spin && !mini && !immobile)
-                this.game.health += lines - 1;
+                this.game.meter += lines - 1;
             else if(mini)
-                this.game.health += lines / 2;
+                this.game.meter += lines / 2;
             else if(lines <= 0)
-                this.game.health += 0.4;
+                this.game.meter += 0.4;
             else if(lines <= 2)
-                this.game.health += lines;
+                this.game.meter += lines;
             else if(lines == 3)
-                this.game.health += 3.6;
+                this.game.meter += 3.6;
             else if(lines == 4)
-                this.game.health += 16;
+                this.game.meter += 16;
             else if(lines >= 5)
-                this.game.health += 20;
+                this.game.meter += 20;
         }else if(!pc){
             if(lines >= 1){
-                this.game.health -= 5;
+                this.game.meter -= 5;
             }
-            else if(this.game.health > 16){
-                this.game.health -= Math.min(0.8,this.game.health - 16);
+            else if(this.game.meter > 16){
+                this.game.meter -= Math.min(0.8,this.game.meter - 16);
             }
         }
 
         if(pc && this.game.lines > 8)
-            this.game.health += 16;
+            this.game.meter += 16;
 
-        var healthdeath = this.game.health < 0;
+        var healthdeath = this.game.meter < 0;
 
-        this.game.health = Math.max(0,Math.min(20,this.game.health));
+        this.game.meter = Math.max(0,this.game.meter);
 
         return [combobreak,b2bbreak,magicianbreak,warlockbreak,healthdeath]
     }
@@ -342,15 +343,15 @@ export class gameManager{
         
         let problematicLineClear = 0;
         if(b2bbreak){
-            this.SpawnWound(this.game.gameConfig.techpluswounds);
+            this.WriteWoundToBoard(this.game.gameConfig.techpluswounds);
             problematicLineClear += this.game.gameConfig.techpluswounds;
         }
         if(magicianbreak){
-            this.SpawnWound(this.game.gameConfig.magicianwounds);
+            this.WriteWoundToBoard(this.game.gameConfig.magicianwounds);
             problematicLineClear += this.game.gameConfig.magicianwounds;
         }
         if(warlockbreak){
-            this.SpawnWound(this.game.gameConfig.warlockwounds);
+            this.WriteWoundToBoard(this.game.gameConfig.warlockwounds);
             problematicLineClear += this.game.gameConfig.warlockwounds;
         }
 
@@ -410,7 +411,7 @@ export class gameManager{
                 break
             }
         }
-        this.StepGarbage(0);
+        this.StepGarbageEntering(0);
     }
 
     GarbageCancel(outgoing:number){
@@ -564,6 +565,19 @@ export class gameManager{
         this.StepAre(0);
     }
 
+    PlacementCouldKill(shift=vector2.zero){
+        if(!this.board.activepiece) return false
+        for (const offi of this.board.activepiece.tiles){
+            const i = this.board.activeposition.add(offi).add(shift)
+            for (const offj of this.queue[0]?.tiles){
+                const j = this.board.piecespawnlocation.add(offj)
+                if(i.eqeqeq(j))
+                    return true
+            }
+        }
+        return false;
+    }
+
     //board stuff
 
     garbagebuffer:garbagePacket[]=[];
@@ -572,15 +586,17 @@ export class gameManager{
     garbageelapsed:number=0;
     garbageswitch=false;
 
-    SpawnGarbage(numberlines:number,dontreset=false){
-        if(!dontreset)
-            this.garbageGeneration.Reset();
-        this.garbageGeneration.Spawn(this.board,this.garbageswitch ? this.game.gameConfig.garbageType1 : this.game.gameConfig.garbageType2,numberlines)
+    WriteGarbageToBoard(numberlines:number,dontreset=false){
+        if(!dontreset){
+            this.garbageGeneration.Reset(this.garbageswitch);
+            this.garbageswitch = !this.garbageswitch
+        }
+        this.garbageGeneration.Write(this.board,this.game.gameConfig.garbageType,numberlines)
         while(this.board.activepiece && !this.movementManager.ValidShift(vector2.zero))
             this.board.activeposition = this.board.activeposition.add(vector2.up)
     }
 
-    StepGarbage(deltaTime:number){
+    StepGarbageEntering(deltaTime:number){
         if(!this.currentpacket){
             if(this.garbagebuffer.length <= 0){
                 this.garbageelapsed = this.game.gameConfig.garbageare;
@@ -590,7 +606,7 @@ export class gameManager{
                 this.currentpacket = this.garbagebuffer.shift() as garbagePacket
                 this.currentpacket.ripen = this.game.gameConfig.garbageare
                 if(!this.iscut){
-                    this.garbageGeneration.Reset()
+                    this.garbageGeneration.Reset(this.garbageswitch)
                     this.garbageswitch = !this.garbageswitch
                 }
             }
@@ -602,7 +618,7 @@ export class gameManager{
         while(this.garbageelapsed >= this.game.gameConfig.garbageare){
             this.garbageelapsed -= this.game.gameConfig.garbageare;
 
-            this.SpawnGarbage(1,true)
+            this.WriteGarbageToBoard(1,true)
 
             this.currentpacket.lines--;
             if(this.currentpacket.lines <= 0){
@@ -616,7 +632,7 @@ export class gameManager{
                 else{
 
                     if(!this.currentpacket.cut){
-                        this.garbageGeneration.Reset()
+                        this.garbageGeneration.Reset(this.garbageswitch)
                         this.garbageswitch = !this.garbageswitch
                         this.garbageelapsed -= this.game.gameConfig.garbagepacketare;
                     }
@@ -628,12 +644,12 @@ export class gameManager{
         }
     }
 
-    SpawnWound(numberlines:number){
+    WriteWoundToBoard(numberlines:number){
         var upshift = Math.max(0,numberlines - (-this.movementManager.DropHeight().y))
         this.board.activeposition = this.board.activeposition.add(vector2.up.mul(upshift));
 
-        this.woundGeneration.Spawn(this.board,()=>{
-            const _tile = this.game.gameConfig.woundsType()
+        this.woundGeneration.Write(this.board,()=>{
+            const _tile = this.game.gameConfig.woundsType(this.garbageswitch)
             _tile.wound = this.game.gameConfig.woundsclearby;
             _tile.countstoclear = false;
             return _tile
@@ -761,7 +777,7 @@ export class gameManager{
         var tocheese = this.game.gameConfig.cheeselayer - cheesed;
         if(this.game.gameConfig.cheeselimit)
             tocheese = Math.min(tocheese, this.game.gameConfig.cheeselimit - this.totalcheesed)
-        this.cheeseChoice.Spawn(this.board,this.game.gameConfig.cheeseType,tocheese)
+        this.cheeseChoice.Write(this.board,this.game.gameConfig.cheeseType,tocheese)
         this.totalcheesed += tocheese;
     }
 
@@ -774,6 +790,9 @@ export class gameManager{
         this.EvaluateCheese();
 
         this.board.yoffset += Math.min(-this.board.yoffset,(this.game.gameConfig.garbageare>0)?deltaTime/this.game.gameConfig.garbageare:deltaTime)
+        if(this.game.meter > 20){
+            this.game.meter -= Math.min(this.game.meter - 20,deltaTime/2000)
+        }
 
         if(!this.game.gameOn){
             const lastsecond = Math.floor(this.gameDelay/1000)
@@ -807,7 +826,7 @@ export class gameManager{
 
         this.game.time += deltaTime;
 
-        this.StepGarbage(deltaTime);
+        this.StepGarbageEntering(deltaTime);
         this.StepGarbageQueue(deltaTime);
         this.StepWave(deltaTime);
 

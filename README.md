@@ -89,3 +89,5 @@ things to add
     - clicking on the screen also lets you draw tiles onto the board and you can swap between this and other stuff
 
 - chess
+
+- rigidbody physics

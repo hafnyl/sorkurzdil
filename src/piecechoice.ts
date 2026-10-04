@@ -1,6 +1,7 @@
 import { clone, Randomiser } from "./basics";
 import { tileType } from "./board";
-import { piece, tileModels } from "./roms";
+import { piece } from "./pieces";
+import { tileModels } from "./roms";
 
 function HashBag(bagprefab:piece[]){
     var o = "";

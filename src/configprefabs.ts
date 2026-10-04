@@ -1,11 +1,11 @@
 import { vector2 } from "./basics.ts";
 import { tile } from "./board.ts";
 import { b2btype, gameConfig, garbagePacket, wavetype } from "./config.ts"
-import { bagprefabs } from "./roms.ts";
+import { bagprefabs } from "./pieces.ts";
 import { kickSystems } from "./rotationsystems.ts";
 import { constraints, missions, scorers } from "./config.ts";
 import { LinesGenerator } from "./garbagegeneration.ts";
-import { Bombs, Damnation } from "./garbagelinetypes.ts";
+import { Bombs, Damnation, NwideGarbage } from "./garbagelinetypes.ts";
 import { BasePieceGenerator, RandomPieceGenerator } from "./piecechoice.ts";
 import { MarkBombClears } from "./gimmicks.ts";
 
@@ -178,6 +178,25 @@ export default class configprefabs{
 
         _gameConfig.garbageare = 500
         _gameConfig.garbageripen = 500
+
+        return _gameConfig
+    }
+
+    static get survivalalt(){
+        let _gameConfig = new gameConfig()
+
+        _gameConfig.garbageChoice = new LinesGenerator(new NwideGarbage(2))
+        _gameConfig.wave = [
+        new garbagePacket(1),
+        new garbagePacket(1),
+        new garbagePacket(2),
+        new garbagePacket(4),
+        ]
+        _gameConfig.waveinterval = 4000
+        _gameConfig.garbageripen = 8000
+        _gameConfig.wavetype = wavetype.ontimer
+
+        _gameConfig.scorer = scorers.survival
 
         return _gameConfig
     }

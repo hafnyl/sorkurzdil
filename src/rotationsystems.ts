@@ -1,4 +1,4 @@
-import { vector2 } from "./basics.ts";
+import { modular, vector2 } from "./basics.ts";
 
 
 export enum kickType {
@@ -447,6 +447,15 @@ const kickTables = Object.freeze({ //aware tetrio and akira have even piece wobb
   }
 });
 
+const kickChecks = Object.freeze({
+  "cultris":[
+      new vector2(0,0),new vector2(-1,0),new vector2(1,0),new vector2(0,-1),new vector2(-1,-1),new vector2(1,-1),new vector2(-2,0),new vector2(2,0),
+  ],
+  "lazysrs":[
+      new vector2(0,0),new vector2(-1,0),new vector2(1,0),new vector2(0,-1),new vector2(-1,-1),new vector2(1,-1),new vector2(0,-2),new vector2(-1,-2),new vector2(1,-2),new vector2(0,2),new vector2(-1,2),new vector2(1,2),new vector2(-2,0),new vector2(2,0),new vector2(0,1),new vector2(-1,1),new vector2(1,1),
+  ]
+})
+
 function* offsetTable(specificOffsetTable:vector2[][],fromRot:number,toRot:number){
     console.log(toRot)
     if(!specificOffsetTable[fromRot]||!specificOffsetTable[toRot])
@@ -524,12 +533,33 @@ export const kickSystems = Object.freeze({
     "techmino":function*(_kickType:kickType,fromRot:number,toRot:number){
         for(const shift of basicOffsetKickTables(_kickType,rs.kickTables.techmino[_kickType],fromRot,toRot))
             yield shift;
-    }
+    },
+    "cultris":function*(_kickType:kickType,fromRot:number,toRot:number){
+      const basicOffsets = rs.offsetTables.none[simplifyKickType(_kickType)]
+      const basicOffset = basicOffsets[fromRot][0].sub(basicOffsets[toRot][0]);
+
+      for(const shift of rs.kickChecks.cultris)
+          yield shift.add(basicOffset);
+    },
+    "lazysrs":function*(_kickType:kickType,fromRot:number,toRot:number){
+      const basicOffsets = rs.offsetTables.none[simplifyKickType(_kickType)]
+      const basicOffset = basicOffsets[fromRot][0].sub(basicOffsets[toRot][0]);
+
+      const rot = modular.displacement(fromRot,toRot,4)
+
+        for(const shift of rs.kickChecks.lazysrs){
+          if(rot != -1)
+            yield shift.hadamard(new vector2(-1,1)).add(basicOffset);
+          else
+            yield shift.add(basicOffset)
+        }
+    },
 });
 
 const rs ={
     offsetTables:offsetTables,
     kickTables:kickTables,
+    kickChecks:kickChecks,
 }
 
 export default rs;
