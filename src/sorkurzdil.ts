@@ -1,10 +1,10 @@
 import { levelsGravities, stridenames } from './roms.ts'
 import { clone, colour3, modular, vector2 } from './basics.ts'
-import { b2btype, cameraMode, Command, gameConfig, garbagePacket, levelling, simplescoring, userConfig, wavetype } from './config.ts';
+import { difficultlinecleartype, cameraMode, Command, gameConfig, garbagePacket, levelling, simplescoring, userConfig, wavetype, b2btype } from './config.ts';
 import InputManager from './inputmanager.ts'
 import { board, matrix, tile } from './board.ts'
 import MovementManager, { lockReport } from './movementmanager.ts';
-import gameFlags from './visualflags.ts';
+import gameFlags from './flags.ts';
 import { ReactElement } from 'react';
 import { gimmickReport } from './gimmicks.ts';
 import { BaseGarbageGenerator, LinesGenerator } from './garbagegeneration.ts';
@@ -46,9 +46,25 @@ export class game{
     allperfect = true; //unimplemented
     fullcombo = true; //unimplemented
 
-    b2b = -1;
+    ib2b = -1;
     combo = -1;
     meter = 0;
+
+    /**0 is no back to back, 1 is b2b, 2 is b2b2b etc */
+    get backto():number{
+        switch(this.gameConfig.b2btype){
+            case b2btype.none:
+                return 0
+            case b2btype.b2b:
+                return this.ib2b > 0 ? 1 : 0
+            case b2btype.chaining:
+                return Math.round(Math.log(Math.max(this.ib2b,0) + 1) / 2) + 1
+            case b2btype.meter:
+                if(this.meter <= 0)
+                    return 0
+                return Math.max(1,Math.floor(this.meter/4-1) - 1)
+        }
+    }
 
     piecesTimes:number[] = [];
 
@@ -243,36 +259,36 @@ export class gameManager{
         else
             this.game.combo++;
         
-        switch(this.game.gameConfig.b2btype){
-            case b2btype.lenient:
+        switch(this.game.gameConfig.difficultlinecleartype){
+            case difficultlinecleartype.lenientallspin:
                 if(lines >= 4 || spin || mini || immobile || pc)
-                    this.game.b2b++;
+                    this.game.ib2b++;
                 else if(lines >= 1){
-                    this.game.b2b = -1;
+                    this.game.ib2b = -1;
                     b2bbreak = true;
                 }
                 break
-            case b2btype.b2b:
+            case difficultlinecleartype.allspin:
                 if(lines >= 4 || ((spin || mini || immobile) && lines >= 1) || pc)
-                    this.game.b2b++;
+                    this.game.ib2b++;
                 else if(lines >= 1){
-                    this.game.b2b = -1;
+                    this.game.ib2b = -1;
                     b2bbreak = true;
                 }
                 break
-            case b2btype.tspin:
+            case difficultlinecleartype.tspin:
                 if(lines >= 4 || ((spin || mini) && piecejustplaced.name === "T" && lines >= 1) || pc)
-                    this.game.b2b++;
+                    this.game.ib2b++;
                 else if(lines >= 1){
-                    this.game.b2b = -1;
+                    this.game.ib2b = -1;
                     b2bbreak = true;
                 }
                 break
-            case b2btype.tech:
+            case difficultlinecleartype.tech:
                 if(((spin || mini) && lines >= 1) || pc)
-                    this.game.b2b++;
+                    this.game.ib2b++;
                 else if(lines >= 1){
-                    this.game.b2b = -1;
+                    this.game.ib2b = -1;
                     b2bbreak = true;
                 }
                 break
@@ -327,19 +343,25 @@ export class gameManager{
     }
 
     ComboWhatever(combobreak:boolean,b2bbreak:boolean,magicianbreak:boolean,warlockbreak:boolean,healthdeath:boolean,oldb2b:number,oldcombo:number,lines:number){
-        if(combobreak && oldcombo >= 1)
+        this.game.flags.combobreak = undefined
+        if(combobreak && oldcombo >= 1){
+            this.game.flags.combobreak = oldcombo
             this.game.flags.otheralerts.push({
                 time: Date.now(),
                 code:"combobreak",
                 info:oldcombo,
             })
+        }
 
-        if(b2bbreak && oldb2b >= 1)
+        this.game.flags.b2bbreak = undefined
+        if(b2bbreak && oldb2b >= 1){
+            this.game.flags.b2bbreak = oldb2b
             this.game.flags.otheralerts.push({
                 time: Date.now(),
                 code:"b2bbreak",
                 info:oldb2b,
             })
+        }
         
         let problematicLineClear = 0;
         if(b2bbreak){
@@ -359,9 +381,7 @@ export class gameManager{
             this.ClearWound(1);
         }
 
-        if(healthdeath){
-            this.game.flags.negativeb2bmeter = true;
-        }
+        this.game.flags.negativeb2bmeter = healthdeath;
     }
 
     ClearWound(counts:number){
@@ -536,7 +556,7 @@ export class gameManager{
             combo:this.game.combo,
         })
             
-        const [oldcombo,oldb2b] = [this.game.combo,this.game.b2b] // a bunch of combo and b2b handling stuff
+        const [oldcombo,oldb2b] = [this.game.combo,this.game.ib2b] // a bunch of combo and b2b handling stuff
         const [combobreak,b2bbreak,magicianbreak,warlockbreak,healthdeath] = this.ComboAdjacent(piecejustplaced,lines,lr.spin,lr.mini,lr.immobile)
         this.ComboWhatever(combobreak,b2bbreak,magicianbreak,warlockbreak,healthdeath,oldb2b,oldcombo,lines);
 
@@ -567,9 +587,9 @@ export class gameManager{
 
     PlacementCouldKill(shift=vector2.zero){
         if(!this.board.activepiece) return false
-        for (const offi of this.board.activepiece.tiles){
+        for (const offi of this.board.activepiece.tileoffsets){
             const i = this.board.activeposition.add(offi).add(shift)
-            for (const offj of this.queue[0]?.tiles){
+            for (const offj of this.queue[0]?.tileoffsets){
                 const j = this.board.piecespawnlocation.add(offj)
                 if(i.eqeqeq(j))
                     return true
@@ -785,7 +805,7 @@ export class gameManager{
         if(this.game.gameOver){
             this.board.yoffset = 0
             return
-        } 
+        }
         
         this.EvaluateCheese();
 

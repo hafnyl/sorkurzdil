@@ -1,10 +1,10 @@
 import './App.css';
-import { bagprefabs, piece } from './pieces.ts';
+import { bagprefabs, piece, pieces } from './pieces.ts';
 import { palette } from './roms.ts';
 import { game, gameManager } from './sorkurzdil.ts'
 import GameRenderer, {rendering} from './rendering.tsx';
 import React, { useRef, useEffect, RefObject, KeyboardEvent, useState, Component, ReactElement } from 'react';
-import { gameConfig, userConfig, Command, b2btype, garbagePacket, wavetype, missions, keybinds } from './config.ts';
+import { gameConfig, userConfig, Command, difficultlinecleartype, garbagePacket, wavetype, missions, keybinds } from './config.ts';
 import { colour3 } from './basics.ts';
 import InputManager from './inputmanager.ts';
 import configs from './configprefabs.ts'
@@ -14,6 +14,7 @@ import { tile } from './board.ts';
 import { LinesGenerator, SpecklesGarbage } from './garbagegeneration.ts';
 import { AdhereToGlue } from './gimmicks.ts';
 import { Damnation, NwideGarbage, OneBlockGarbage, StraightGarbage } from './garbagelinetypes.ts';
+import { BasePieceGenerator, Fool } from './piecechoice.ts';
 
 const FPS = 120;
 
@@ -29,8 +30,9 @@ _gameConfig.debug = true;
 
 //_gameConfig.Splice(configs.bombs)
 
-
-//_gameConfig.pieceChoice = pieceChoices.bags(bagprefabs.tetrominosPlusGrenade)
+//_gameConfig.kickSystem = kickSystems.lazyrs
+//_gameConfig.pieceChoice = new Fool(bagprefabs.tetrominos,[pieces.krux],28,1)
+_gameConfig.pieceChoice = new BasePieceGenerator(bagprefabs.pentominos)
 
 _userConfig.sdf = 1/0
 //_userConfig.usesdarr = true;
@@ -235,7 +237,7 @@ function App() {
   return (
     <div className="App">
       <TextDisplay ref={debugu}/>
-      <canvas ref={menuCanvasRef} width="3413px" height="2560px"/>
+      <canvas ref={menuCanvasRef} width="4550px" height="2560px"/>
       <button style={{transform: "translate(-30vw, -50%)"}} onClick={()=>{
         StartGame(debugu,_gameConfig);
       }}>play</button>

@@ -1,7 +1,7 @@
 import { palette, tileModel } from './roms.ts'
 import { colour3, modular, vector2 } from './basics.ts'
 import { game, gameManager } from './sorkurzdil.ts';
-import gameFlags from './visualflags.ts';
+import gameFlags from './flags.ts';
 import { board, matrix, tile } from './board.ts';
 import { simpleKickType, simplifyKickType } from './rotationsystems.ts';
 import { cameraMode } from './config.ts';
@@ -107,7 +107,7 @@ export default class MatrixRendering {
 
     cullline = 0;
 
-    FillRect(start:vector2,size:vector2,zoom=true,bypassboardoffset=true){
+    FillRect(start:vector2,size:vector2,zoom=this.matrixzoom,bypassboardoffset=true){
         if(!bypassboardoffset){
             start = new vector2(start.x,start.y - this.boardtilesize.y * this.board.yoffset)
             if(start.y > this.cullline)
@@ -116,7 +116,7 @@ export default class MatrixRendering {
                 size = new vector2(size.x,this.cullline - start.y)
         }
 
-        if(!zoom){
+        if(zoom==1||zoom<=0){
             this.ctx.fillRect(
                 Math.round(start.x),
                 Math.round(start.y),
@@ -125,8 +125,8 @@ export default class MatrixRendering {
             )
             return
         }
-        const transformedStart = start.mul(this.matrixzoom);
-        const transformedSize = size.mul(this.matrixzoom);
+        const transformedStart = start.mul(zoom);
+        const transformedSize = size.mul(zoom);
         const transformedStartRoundoff = new vector2(Math.round(transformedStart.x),Math.round(transformedStart.y));
         const roundoffOffset = transformedStartRoundoff.sub(transformedStart);
         const transformedSizeRoundoff = new vector2(transformedSize.x - roundoffOffset.x,transformedSize.y - roundoffOffset.y);
@@ -140,7 +140,7 @@ export default class MatrixRendering {
         )
     }
 
-    DrawSquare(_tileModel:tileModel,screenpos:vector2,zoom=true,bypassboardoffset=true,tilesize=this.boardtilesize){
+    DrawSquare(_tileModel:tileModel,screenpos:vector2,zoom=this.matrixzoom,bypassboardoffset=true,tilesize=this.boardtilesize){
         if (_tileModel.isNull)
             return;
 
@@ -185,7 +185,7 @@ export default class MatrixRendering {
         var _tileModel = _tile.tileModel;
 
         if(this.game.gameOver){
-            this.DrawSquare(_tileModel.coloured(palette.one),screenpos,true,bypassboardoffset);
+            this.DrawSquare(_tileModel.coloured(palette.one),screenpos,this.matrixzoom,bypassboardoffset);
             return
         }
 
@@ -210,7 +210,22 @@ export default class MatrixRendering {
             _tileModel = _tileModel.withOpacity(1 - Math.min(1,deadFor / (this.game.gameConfig.lineclearare + this.game.gameConfig.linecleartime - (this.gameManager.lineclearare ? this.gameManager.initialare : 0))));
         }
 
-        this.DrawSquare(_tileModel,screenpos,true,bypassboardoffset);
+        this.DrawSquare(_tileModel,screenpos,this.matrixzoom,bypassboardoffset);
+    }
+
+    Danger():[number,string]{
+        const activebounds = this.board.activepiece?.bounds || new vector2(0,2)
+        const nextbounds = this.gameManager.queue[0]?.bounds || new vector2(0,2)
+        const holdbounds = this.gameManager.hold[0]?.bounds || new vector2(0,0)
+        var danger = this.board.matrix.GetEffectiveHeight() - this.board.matrix.height + Math.max(activebounds.x,activebounds.y) + Math.floor(Math.max(nextbounds.y,holdbounds.y)/2-0.5) + 1
+        var dangercolour = palette.two.toHex()
+
+        if(this.gameManager.PlacementCouldKill(this.gameManager.movementManager.DropHeight())){
+            dangercolour = palette.tri.toHex()
+            danger *= 3
+        }
+
+        return [danger,dangercolour]
     }
 
     DrawMatrixBackground(){
@@ -220,17 +235,7 @@ export default class MatrixRendering {
         this.ctx.fillStyle = palette.one.toHex();
 
         if(!this.game.gameOver){
-            var danger = this.board.matrix.GetEffectiveHeight() - this.board.matrix.height + 3
-            var dangercolour = palette.two.toHex()
-
-            if(this.gameManager.movementManager.Grounded() && this.gameManager.PlacementCouldKill()){
-                dangercolour = palette.tri.toHex()
-                danger *= 3
-            }
-            if(this.gameManager.movementManager.DropHeight().y == -1 && this.gameManager.PlacementCouldKill(vector2.down)){
-                dangercolour = palette.tri.toHex()
-                danger *= 2
-            }
+            var [danger,dangercolour] = this.Danger();
 
             if(danger > 0){
                 this.ctx.fillStyle = Math.sin(Date.now() / 1000 * 3 * danger) > 0 ? dangercolour : palette.zro.toHex()
@@ -263,10 +268,10 @@ export default class MatrixRendering {
         }
     }
 
-    DrawPiece(piece:piece,screenpos:vector2,_tileModel:tileModel,showCOR=false,zoom=true,bypassboardoffset=true,tilesize=this.boardtilesize){
+    DrawPiece(piece:piece,screenpos:vector2,_tileModel:tileModel,showCOR=false,zoom=this.matrixzoom,bypassboardoffset=true,tilesize=this.boardtilesize){
         _tileModel = _tileModel || piece.tileModel;
-        for (let i=0; i<piece.tiles.length; i++){
-            const offset = piece.tiles[i];
+        for (let i=0; i<piece.tileoffsets.length; i++){
+            const offset = piece.tileoffsets[i];
             this.DrawSquare(_tileModel,screenpos.add(flipy(this.FSTL2(offset,tilesize))),zoom,bypassboardoffset,tilesize)
         }
 
@@ -339,7 +344,7 @@ export default class MatrixRendering {
         this.DrawPiece(this.board.activepiece,
             this.CoordsToScreenPos(landpos),
             ghostModel,
-            true,true,false
+            true,this.matrixzoom,false
         );
     }
 
@@ -362,7 +367,7 @@ export default class MatrixRendering {
         this.DrawPiece(this.board.activepiece,
             screenpos,
             pieceModel,
-            true,true,false
+            true,this.matrixzoom,false
         );
     }
 
@@ -399,13 +404,13 @@ export default class MatrixRendering {
             this.DrawPiece(nexthold,
                 this.CoordsToScreenPos(this.board.piecespawnlocation),
                 tileModel.dither3alt(palette.two),
-                false,true,false
+                false,this.matrixzoom,false
             );
         }
         this.DrawPiece(nextpiece,
             this.CoordsToScreenPos(this.board.piecespawnlocation),
             tileModel.dither2(palette.tri),
-            false,true,false
+            false,this.matrixzoom,false
         );
         
     }
@@ -534,7 +539,7 @@ export default class MatrixRendering {
 
         this.DrawActivePiece();
 
-        if(this.board.matrix.height - this.board.matrix.GetEffectiveHeight() < 3)
+        if(this.Danger()[0] > 0)
             this.DrawHazards();
     }
 

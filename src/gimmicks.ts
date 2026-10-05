@@ -65,7 +65,7 @@ export function MarkBombClears(_board:board,_game:game):gimmickReport{
     if(!_board.activepiece) return new gimmickReport();
     const _gimmickReport:gimmickReport = new gimmickReport()
     
-    const igniters = _board.activepiece.tiles.toSpliced(0,0).map(offset=>_board.activeposition.add(offset))
+    const igniters = _board.activepiece.tileoffsets.toSpliced(0,0).map(offset=>_board.activeposition.add(offset))
     DetonateBombs(_gimmickReport,_board,_game,igniters)
     return _gimmickReport
 }
@@ -94,7 +94,7 @@ export function AdhereToGlue(_board:board,_game:game):gimmickReport{
     const locked = new gimmickReport();
     locked.lock = true
 
-    for(const offset of _board.activepiece.tiles){
+    for(const offset of _board.activepiece.tileoffsets){
         const i = offset.add(_board.activeposition)
         for(const j of vector2.orthogonal){
             const _tile = _board.matrix.GetTile(j.add(i))

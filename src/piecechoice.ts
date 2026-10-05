@@ -7,7 +7,7 @@ function HashBag(bagprefab:piece[]){
     var o = "";
     for(const _piece of bagprefab){
         o += "."
-        for(const tile of _piece.tiles){
+        for(const tile of _piece.tileoffsets){
             o += tile.toString();
         }
     }
@@ -34,7 +34,7 @@ export class BasePieceGenerator{
     Reset(){
         this.workingbag = []
         for(const _piece of this.bagprefab)
-            this.workingbag.push(_piece);
+            this.workingbag.push(clone(_piece));
     }
 
     Choice():piece{
@@ -59,9 +59,59 @@ export class Bags1Bomb extends BasePieceGenerator{
     Reset(){
         this.workingbag = []
         for(const _piece of this.bagprefab)
-            this.workingbag.push(_piece);
+            this.workingbag.push(clone(_piece));
         let bomb = Math.floor(this.randomiser.next() * this.workingbag.length);
         this.workingbag[bomb] = this.workingbag[bomb].withGimmick(tileType.grenade).withModel(tileModels.grenade)
+    }
+}
+
+export class Fool extends BasePieceGenerator{
+    altbag:piece[];
+    piecesnormal:number;
+    piecesalt:number;
+
+    normalgen:BasePieceGenerator;
+    altgen:BasePieceGenerator;
+
+    repeattrack:number=0;
+    altstrack:number=0;
+
+    constructor(bagprefab:piece[],altbag:piece[],piecesnormal=14,piecesalt=3,normalgen=BasePieceGenerator,altgen=BasePieceGenerator){
+        super(bagprefab)
+        this.altbag = altbag
+        this.piecesnormal = piecesnormal
+        this.piecesalt = piecesalt
+        this.normalgen = new (normalgen)(bagprefab)
+        this.altgen = new (altgen)(altbag)
+    }
+
+    Seed(seed:number){
+        this.normalgen.Seed(seed)
+        this.altgen.Seed(seed + 1)
+    }
+
+    Reset(): void {
+        this.normalgen.Reset()
+        this.altgen.Reset()
+        this.repeattrack = this.piecesnormal + this.piecesalt
+        this.altstrack = this.piecesalt
+    }
+
+    Next(): piece {
+
+        if(this.repeattrack <= 0)
+            this.Reset()
+
+        if(Math.random() <= this.altstrack/this.repeattrack){
+            this.altstrack--;
+            this.repeattrack--;
+
+            return this.altgen.Next()
+        }else{
+            this.repeattrack--;
+
+            return this.normalgen.Next()
+        }
     }
 }
 

@@ -7,7 +7,7 @@ import { piece } from "./pieces.ts";
 import { levelsGravities, levelsLockTimes } from "./roms.ts";
 import { SpinType, symmetry } from "./rotationsystems.ts";
 import { game } from "./sorkurzdil.ts";
-import gameFlags from "./visualflags.ts";
+import gameFlags from "./flags.ts";
 
 export type lockReport={
     spin:boolean,
@@ -107,8 +107,8 @@ export default class MovementManager{
         if(!this.board.activepiece)
             return;
 
-        for (let i=0; i<this.board.activepiece.tiles.length; i++){
-            const offset = this.board.activepiece.tiles[i];
+        for (let i=0; i<this.board.activepiece.tileoffsets.length; i++){
+            const offset = this.board.activepiece.tileoffsets[i];
             if(!this.board.matrix.IsValid(this.board.activeposition.add(offset).add(shift)))
                 return false;
         }
@@ -119,8 +119,8 @@ export default class MovementManager{
         if(!this.board.activepiece)
             return;
 
-        for (let i=0; i<this.board.activepiece.tiles.length; i++){
-            const offset = this.board.activepiece.tiles[i];
+        for (let i=0; i<this.board.activepiece.tileoffsets.length; i++){
+            const offset = this.board.activepiece.tileoffsets[i];
             if(!this.board.matrix.StrictlyInBounds(this.board.activeposition.add(offset).add(shift)))
                 return false;
         }
@@ -131,8 +131,8 @@ export default class MovementManager{
         if(!this.board.activepiece)
             return;
 
-        for (let i=0; i<this.board.activepiece.tiles.length; i++){
-            const offset = this.board.activepiece.tiles[i];
+        for (let i=0; i<this.board.activepiece.tileoffsets.length; i++){
+            const offset = this.board.activepiece.tileoffsets[i];
             if(!this.board.matrix.InBounds(this.board.activeposition.add(offset).add(shift)))
                 return false;
         }
@@ -177,7 +177,7 @@ export default class MovementManager{
     }
 
     ValidPiece(_piece:piece,shift:vector2=vector2.zero){
-        for (const offset of _piece.tiles){
+        for (const offset of _piece.tileoffsets){
             if(this.game.gameConfig.activepiecephasethroughblocks && !this.board.matrix.InBounds(this.board.activeposition.add(offset).add(shift)))
                 return false
             if(!this.game.gameConfig.activepiecephasethroughblocks && !this.board.matrix.IsValid(this.board.activeposition.add(offset).add(shift)))
@@ -260,7 +260,7 @@ export default class MovementManager{
         const fromRot = this.board.activepiece.orientiation;
         const toRot = (rotatedPiece.orientiation + 2) % 4;
 
-        for(const shift of this.game.gameConfig.kickSystem(rotatedPiece.kickType,fromRot,toRot))
+        for(const shift of this.game.gameConfig.kickSystem(rotatedPiece,fromRot,toRot))
             if(this.ValidPiece(rotatedPiece,shift)){
                 this.board.activepiece = rotatedPiece;
                 this.board.activeposition = this.board.activeposition.add(shift);
@@ -317,7 +317,7 @@ export default class MovementManager{
         const toRot = rotatedPiece.orientiation;
 
         var i = 0;
-        for(const shift of this.game.gameConfig.kickSystem(rotatedPiece.kickType,fromRot,toRot)){
+        for(const shift of this.game.gameConfig.kickSystem(rotatedPiece,fromRot,toRot)){
             i++;
             if(this.ValidPiece(rotatedPiece,shift)){
                 this.board.activepiece = rotatedPiece;
@@ -380,7 +380,7 @@ export default class MovementManager{
 
         if(this.game.gameConfig.aligntoptile){
             var topy = 0
-            for(const i of this.board.activepiece.tiles)
+            for(const i of this.board.activepiece.tileoffsets)
                 topy = Math.max(i.y,topy)
             this.board.activeposition = this.board.activeposition.add(new vector2(0,-topy))
         }
@@ -548,7 +548,7 @@ export default class MovementManager{
         if(!this.board.activepiece)
             return
 
-        for (const offset of this.board.activepiece.tiles){
+        for (const offset of this.board.activepiece.tileoffsets){
             const coords = this.board.activeposition.add(offset);
             const _tile = new tile(this.board.activepiece?.tileModel,Date.now() - this.game.gameConfig.are)
             _tile.tileType = this.board.activepiece.tileType;

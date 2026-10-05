@@ -1,6 +1,6 @@
 import { vector2 } from "./basics.ts";
 import { tile } from "./board.ts";
-import { b2btype, gameConfig, garbagePacket, wavetype } from "./config.ts"
+import { difficultlinecleartype, gameConfig, garbagePacket, wavetype } from "./config.ts"
 import { bagprefabs } from "./pieces.ts";
 import { kickSystems } from "./rotationsystems.ts";
 import { constraints, missions, scorers } from "./config.ts";
@@ -141,7 +141,7 @@ export default class configprefabs{
         let _gameConfig = new gameConfig()
 
         _gameConfig.techpluswounds = 20
-        _gameConfig.b2btype = b2btype.tech
+        _gameConfig.difficultlinecleartype = difficultlinecleartype.tech
 
         return _gameConfig
     }

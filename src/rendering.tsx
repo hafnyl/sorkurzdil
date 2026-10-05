@@ -1,13 +1,13 @@
 import { palette, colourpossibility, SafeColour, tileModel, clearNames } from './roms.ts'
 import { colour3, formatTime, modular, vector2 } from './basics.ts'
 import MatrixRendering from './matrixrendering.tsx';
-import gameFlags, { lineclearalert } from './visualflags.ts';
+import gameFlags, { lineclearalert } from './flags.ts';
 import { game, gameManager } from './sorkurzdil.ts';
 import { simplifyKickType } from './rotationsystems.ts';
 import { scoreDisplay, scoreDisplays, scoreDisplayType } from './config.ts';
 import particleManager, { curve, rectParticle, textParticle } from './particlemanager.tsx';
 import React, { createElement, ReactElement, RefObject, useImperativeHandle, useRef, useState } from 'react';
-import { compensations, piece } from './pieces.ts';
+import { piece } from './pieces.ts';
 
 function FDecay(x:number){
     return 1 - Math.exp(-x/32);
@@ -63,6 +63,10 @@ export class rendering {
         return new vector2(x.x * this.tilesize.x,x.y * this.tilesize.y);
     }
 
+    FSTL2(x:vector2,tilesize=this.tilesize){
+        return x.hadamard(tilesize.add(this.matrixRenderer.gridwidth));
+    }
+
     bFSTL(x:vector2){
         return new vector2(x.x * this.boardtilesize.x,x.y * this.boardtilesize.y);
     }
@@ -80,9 +84,21 @@ export class rendering {
     }
 
     DrawPieceCompensate(piece:piece,screenpos:vector2,_tileModel:tileModel,tilesize=this.tilesize){
-        const compensation = compensations[simplifyKickType(piece.kickType)].flip();
         this.matrixRenderer.ctx = this.ctx;
-        this.matrixRenderer.DrawPiece(piece,screenpos.add(flipy(this.FSTL(compensation))),_tileModel,false,false,true,tilesize);
+        
+        const bounds = piece.bounds
+        const length = Math.max(bounds.x,bounds.y)
+        var compensatezoom = 1
+        if(length>4){
+            console.log(length)
+            compensatezoom = 4 / length
+        }
+
+        var compensateoffset = new vector2(0,Math.floor(Math.min(-piece.extends[1].y,2)-0.5)+1);
+        if(bounds.x%2==0)
+            compensateoffset = compensateoffset.add(new vector2(-0.5,0))
+
+        this.matrixRenderer.DrawPiece(piece,screenpos.add(flipy(this.FSTL2(compensateoffset))).div(compensatezoom),_tileModel,false,compensatezoom,true,tilesize);
     }
 
     DrawQueue(){
@@ -97,7 +113,7 @@ export class rendering {
                 useModel = useModel.coloured(palette.one);
 
             this.DrawPieceCompensate(queuePiece,
-                topright.add(this.FSTL(new vector2(3 + i * 4.5,1))),
+                topright.add(this.FSTL2(new vector2(3 + i * 4.5,1))),
                 useModel
             );
         }
@@ -115,7 +131,7 @@ export class rendering {
                 useModel = useModel.coloured(palette.one);
             
             this.DrawPieceCompensate(queuePiece,
-            topleft.add(this.FSTL(new vector2(-3 - i * 4.5,1))),
+            topleft.add(this.FSTL2(new vector2(-3 - i * 4.5,1))),
             useModel
             );
         }
@@ -127,27 +143,27 @@ export class rendering {
 
         var colouroverride:string|null = null;
         if(lines == 12)
-            colouroverride = "#0000ff"
+            colouroverride = "#ff00ff"
         if(lines > 12 && lines < 20){
             if(Date.now() % 128 < 64)
-                colouroverride = "#00ffff";
+                colouroverride = "#ffffff";
             else
-                colouroverride = "#ffff00";
+                colouroverride = "#ff00ff";
         }
         if(lines == 20){
             const tee = Date.now() / 1000
             const x = (Math.sin(tee * Math.E)**2 + Math.sin(tee * Math.PI)**2 + Math.sin(tee)**2);
-            colouroverride = colour3.fromHSV(0,0,x % 1).toHex();
+            colouroverride = (x%1)>0.5?"#ffffff":"#000000";
         }
         if(lines > 20 && lines < 24){
             const tee = Date.now() / 1000
             const x = (Math.sin(tee * Math.E)**2 + Math.sin(tee * Math.PI)**2 + Math.sin(tee)**2);
-            colouroverride = colour3.fromHSV(x % 1,1,1).toHex();
+            colouroverride = (x%1)>0.5?"#ff0000":"#000000";
         }
         if(lines >= 24){
             const tee = Date.now() / 1000
             const x = (Math.sin(tee * Math.E)**2 + Math.sin(tee * Math.PI)**2 + Math.sin(tee)**2);
-            colouroverride = colour3.fromHSV(0.75383,1,x % 1).toHex();
+            colouroverride = (x%1)>0.5?"#ff00ff":"#000000";
         }
 
         if(!somspin){
@@ -307,7 +323,7 @@ export class rendering {
     }
 
     Setb2b(){
-        if(this.game.b2b >= 65536){
+        if(this.game.ib2b >= 65536){
             const tee = Date.now()
             if(Math.random() < 1/60){
                 this.magicnumber = Date.now();
@@ -318,34 +334,34 @@ export class rendering {
             this.ctx.fillStyle = this.magiccolour.lerp(colour3.fromHSV(1,0,1),FDecay(t/40)).toHex();
             this.ctx.globalAlpha = Math.sin(tee/3000)**2 / 2 + 0.5;
             
-            this.ctx.font = (101 + Math.log(this.game.b2b)) + "px Bytesized";
+            this.ctx.font = (101 + Math.log(this.game.ib2b)) + "px Bytesized";
         }
-        else if(this.game.b2b >= 2545){
+        else if(this.game.ib2b >= 2545){
             const tee = Date.now() / 1000
             const x = (Math.sin(tee * Math.E)**2 + Math.sin(tee * Math.PI)**2 + Math.sin(tee)**2);
             this.ctx.fillStyle = colour3.fromHSV(1,0,x % 1).toHex();
-            this.ctx.font = (85 + 2 * Math.log(this.game.b2b)) + "px Bytesized";
+            this.ctx.font = (85 + 2 * Math.log(this.game.ib2b)) + "px Bytesized";
         }
-        else if(this.game.b2b >= 256){
+        else if(this.game.ib2b >= 256){
             if(Date.now() % 128 < 64)
                 this.ctx.fillStyle = palette.great1.toHex();
             else
                 this.ctx.fillStyle = palette.great2.toHex();
-            this.ctx.font = (70 + (this.game.b2b**0.5)/2) + "px Bytesized";
+            this.ctx.font = (70 + (this.game.ib2b**0.5)/2) + "px Bytesized";
         }
-        else if(this.game.b2b >= 50){
+        else if(this.game.ib2b >= 50){
             this.ctx.fillStyle = colour3.fromHSV(Date.now()/ 1000,1,1).toHex();
-            this.ctx.font = (58 + this.game.b2b**0.5) + "px Bytesized";
+            this.ctx.font = (58 + this.game.ib2b**0.5) + "px Bytesized";
         }
-        else if(this.game.b2b >= 16){
+        else if(this.game.ib2b >= 16){
             const tee = Date.now() / 1000
             const x = Math.sin(tee)*2;
             this.ctx.fillStyle = new colour3(1,0,1).lerp(new colour3(0,0,1),x).toHex();
-            this.ctx.font = (48 + this.game.b2b/4) + "px Bytesized";
+            this.ctx.font = (48 + this.game.ib2b/4) + "px Bytesized";
         }
-        else if(this.game.b2b >= 4){
+        else if(this.game.ib2b >= 4){
             this.ctx.fillStyle = palette.two.toHex();
-            this.ctx.font = (32 + this.game.b2b) + "px Bytesized";
+            this.ctx.font = (32 + this.game.ib2b) + "px Bytesized";
         }else{
             this.ctx.fillStyle = palette.one.toHex();
             this.ctx.font = "32px Bytesized";
@@ -405,7 +421,7 @@ export class rendering {
             }
         }
             
-        if(this.game.b2b >0){ //4 16 50 256 2545 65536
+        if(this.game.ib2b >0){ //4 16 50 256 2545 65536
             this.ctx.globalAlpha = 1;
 
             this.Setb2b();
@@ -413,7 +429,7 @@ export class rendering {
             this.ctx.letterSpacing = "0px";
             this.ctx.textAlign = "end"; 
             this.ctx.fillText(
-                this.game.b2b + " b2b",
+                this.game.ib2b + " b2b",
                 -_drawnMatrix.x/2 // start from the left side of the board
                 - this.boardsmalltextmargin, // margin in between the board and the text
                 -_drawnMatrix.y/2 // start from the top of the board
@@ -499,7 +515,7 @@ export class rendering {
                 else if(_alert.info >= 2545)
                     fontsize = 85 + 2 * Math.log(_alert.info);
                 else if(_alert.info >= 256)
-                    fontsize = 70 + (this.game.b2b**0.5);
+                    fontsize = 70 + (this.game.ib2b**0.5);
                 else if(_alert.info >= 50)
                     fontsize = 58 + _alert.info**0.5;
                 else if(_alert.info >= 16)
@@ -709,8 +725,8 @@ export default function GameRenderer({ref}){
     },[initialised,dynamicText,setDynamicText])
 
     return (<>
-      <canvas ref={matrixCanvasRef} width="3410" height="2560px"/>
-      <canvas ref={uiCanvasRef} width="3410" height="2560px"/>
+      <canvas ref={matrixCanvasRef} width="4550" height="2560px"/>
+      <canvas ref={uiCanvasRef} width="4550" height="2560px"/>
       {dynamicText}
     </>)
 }

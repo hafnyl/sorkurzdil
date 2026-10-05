@@ -39,8 +39,8 @@ export const simpleScoringSystems = Object.freeze({
             }else{
                 score += 1200 + 200 * lines
             }
-            if(_game.b2b > 0)
-                score += 200
+            if(_game.backto > 0)
+                score += 200 * _game.backto
         }
 
         return score
@@ -73,14 +73,43 @@ export const attackingSystems = Object.freeze({
                 attack += Math.floor(_game.combo / 2);
         }
 
-        if(_game.b2b > 0){
+        if(_game.backto > 0){
             if(lines >= 4)
-                attack += lines - 2;
+                attack += lines - 2 + _game.backto - 1;
             if(mini)
-                attack += 1;
+                attack += _game.backto;
             else if(spin)
-                attack += lines;
+                attack += lines + _game.backto - 1;
         }
+
+        return attack
+    },
+    "qp2":function(_game:game,_:piece,lines:number,spin:boolean,mini:boolean,__:boolean,pc:boolean){
+        var attack = 0
+
+        if(lines > 0){
+            if(lines < 4)
+                attack += lines - 1;
+            if(lines == 1)
+                attack += 1
+            if(lines >= 4)
+            attack += lines;
+        }
+
+        if(lines > 0 && spin)
+            attack += 2 * lines;
+
+        if(pc)
+            attack += 10
+
+        if(_game.combo > 1){
+            if(_game.combo > 10)
+                attack += 5;
+            else
+                attack += Math.floor(_game.combo / 2);
+        }
+
+        attack += _game.backto
 
         return attack
     }
@@ -298,12 +327,19 @@ export enum levelling{
     theemperor,
 }
 
-export enum b2btype{
+export enum difficultlinecleartype{
     none,
-    lenient,
-    b2b,
+    lenientallspin,
+    allspin,
     tspin,
     tech,
+}
+
+export enum b2btype{
+    none,
+    b2b,
+    chaining,
+    meter,
 }
 
 export enum spinDetection{
@@ -327,7 +363,7 @@ export class gameConfig{
     width=10;
     height=20;
 
-    kickSystem=kickSystems.techmino;
+    kickSystem=kickSystems.sorkurzdil;
     pieceChoice=new BasePieceGenerator(bagprefabs.tetrominos);
     queuesize = 5;
     holdsize = 1;
@@ -371,7 +407,11 @@ export class gameConfig{
     levelLocktimes = false;
     startlevel = 0;
 
-    b2btype:b2btype = b2btype.b2b;
+    difficultlinecleartype:difficultlinecleartype = difficultlinecleartype.allspin;
+    b2btype:b2btype = b2btype.meter;
+    b2bsurge=false;
+    b2bsurgestart=4;
+    b2bsurgestartattack=4;
 
     magicianwounds = 0;
     warlockwounds = 0;

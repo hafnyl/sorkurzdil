@@ -1,8 +1,10 @@
 import { modular, vector2 } from "./basics.ts";
+import { piece } from "./pieces.ts";
 
 
 export enum kickType {
   none,
+  auto,
   T,
   I,
   O,
@@ -11,6 +13,25 @@ export enum kickType {
   Z,
   L,
   J,
+
+  I5,
+  L5,
+  Y,
+  R,
+  J5,
+  H,
+  V,
+  T5,
+  Q,
+  K,
+  U,
+  Z5,
+  P,
+  W,
+  N,
+  F,
+  X,
+  S5,
 }
 
 
@@ -31,16 +52,19 @@ export function simplifyKickType(_kicktType:kickType){
   switch(_kicktType){
     case kickType.none:
         return simpleKickType.none;
+    case kickType.auto:
+        return simpleKickType.T;
     case kickType.I:
         return simpleKickType.I;
     case kickType.O:
+    case kickType.V:
+    case kickType.L5:
+    case kickType.J5:
+    case kickType.Y:
+    case kickType.R:
+    case kickType.H:
+    case kickType.N:
         return simpleKickType.O;
-    case kickType.T:
-    case kickType.S:
-    case kickType.Z:
-    case kickType.L:
-    case kickType.J:
-        return simpleKickType.T;
   }
   return simpleKickType.T;
 }
@@ -69,12 +93,13 @@ export type specificKickTable = [
 ]
 
 function RotationalSymmetry180(_specificKickTable:specificKickTable){
-    _specificKickTable[2][0] = _specificKickTable[0][2];
-    _specificKickTable[2][1] = _specificKickTable[0][3];
-    _specificKickTable[2][3] = _specificKickTable[0][1];
-    _specificKickTable[3][0] = _specificKickTable[1][2];
-    _specificKickTable[3][1] = _specificKickTable[1][3];
-    _specificKickTable[3][2] = _specificKickTable[1][0];
+  _specificKickTable[2][3] = _specificKickTable[0][1];
+  _specificKickTable[3][2] = _specificKickTable[1][0];
+  _specificKickTable[2][1] = _specificKickTable[0][3];
+  _specificKickTable[1][2] = _specificKickTable[3][0];
+  _specificKickTable[2][0] = _specificKickTable[0][2];
+  _specificKickTable[3][1] = _specificKickTable[1][3];
+  return _specificKickTable
 }
 
 function flipKicks(O:vector2[]){
@@ -250,6 +275,168 @@ const trsJ:specificKickTable = [
         [new vector2(+0,+0),new vector2(-1,+0),new vector2(-1,-1),new vector2(+1,+0),new vector2(+0,+2),new vector2(-1,+2),new vector2(-1,+1),],
         [],
     ],
+]
+
+const trsZ5:specificKickTable = RotationalSymmetry180([
+  [
+    [],
+    [new vector2(+0,+0),new vector2(+0,+1),new vector2(+1,+1),new vector2(-1,+0),new vector2(+0,-3),new vector2(+0,+2),new vector2(+0,-2),new vector2(+0,+3),new vector2(-1,+2),],
+    [vector2.zero],
+    [new vector2(+0,+0),new vector2(+1,+0),new vector2(+0,-3),new vector2(+0,-1),new vector2(+0,+1),new vector2(+0,-2),new vector2(+0,+2),new vector2(+0,+3),new vector2(+1,+2),],
+  ],
+  [
+    [new vector2(+0,+0),new vector2(+0,-1),new vector2(-1,-1),new vector2(+1,+0),new vector2(+0,-3),new vector2(+0,+2),new vector2(+0,-2),new vector2(+0,+3),new vector2(+1,-2),],
+    [],
+    [],
+    [vector2.zero],
+  ],
+  [
+    [],
+    [],
+    [],
+    [],
+  ],
+  [
+    [new vector2(+0,+0),new vector2(-1,+0),new vector2(+0,-1),new vector2(+0,+1),new vector2(+0,-2),new vector2(+0,-3),new vector2(+0,+2),new vector2(+0,+3),new vector2(-1,-2),],
+    [],
+    [],
+    [],
+  ],
+])
+
+const trsP:specificKickTable = [
+  [
+    [],
+    [new vector2(+0,+0),new vector2(-1,+0),new vector2(-1,+1),new vector2(+0,-2),new vector2(-1,-2),new vector2(-1,-1),new vector2(+0,+1),],
+    [new vector2(+0,+0),new vector2(-1,+0),new vector2(+0,-1),new vector2(+0,+1),],
+    [new vector2(+0,+0),new vector2(+1,+0),new vector2(+1,+1),new vector2(+0,-2),new vector2(+1,-2),],
+  ],
+  [
+    [new vector2(+0,+0),new vector2(+1,+0),new vector2(+1,-1),new vector2(+0,+2),new vector2(+1,+2),new vector2(+0,-1),new vector2(+1,+1),],
+    [],
+    [new vector2(+0,+0),new vector2(+1,+0),new vector2(+1,-1),new vector2(+0,+2),new vector2(+1,+2),new vector2(+1,+1),],
+    [new vector2(+0,+0),new vector2(+1,+0),new vector2(+0,+1),new vector2(-1,+0),],
+  ],
+  [
+    [new vector2(+0,+0),new vector2(+1,+0),new vector2(+0,+1),new vector2(+0,-1),],
+    [new vector2(+0,+0),new vector2(-1,+0),new vector2(-1,-1),new vector2(-1,+1),new vector2(+0,-2),new vector2(-1,-2),new vector2(-1,-1),],
+    [],
+    [new vector2(+0,+0),new vector2(+1,+0),new vector2(+1,+1),new vector2(-1,+0),new vector2(+0,-2),new vector2(+1,-2),],
+  ],
+  [
+    [new vector2(+0,+0),new vector2(-1,+0),new vector2(-1,-1),new vector2(+0,+2),new vector2(-1,+2),],
+    [new vector2(+0,+0),new vector2(-1,+0),new vector2(+0,-1),new vector2(+1,+0),],
+    [new vector2(+0,+0),new vector2(-1,+0),new vector2(-1,-1),new vector2(-1,+1),new vector2(+0,-1),new vector2(+0,+2),new vector2(-1,+2),],
+    [],
+  ],
+]
+
+const trsF:specificKickTable = [
+  [
+    [],
+    [new vector2(+0,+0),new vector2(-1,+0),new vector2(+1,+0),new vector2(-1,+1),new vector2(+0,-2),new vector2(+0,-3),],
+    [new vector2(+0,+0),new vector2(+1,+0),new vector2(-1,+0),new vector2(-1,-1),],
+    [new vector2(+0,+0),new vector2(+1,+0),new vector2(+1,-1),new vector2(+0,+1),new vector2(+0,-2),new vector2(+0,-3),],
+  ],
+  [
+    [new vector2(+0,+0),new vector2(+1,+0),new vector2(+1,-1),new vector2(-1,+0),new vector2(+0,+2),new vector2(+0,+3),],
+    [],
+    [new vector2(+0,+0),new vector2(+1,+0),new vector2(+0,-1),new vector2(-1,+0),new vector2(+0,+2),],
+    [new vector2(+0,+0),new vector2(+0,-1),new vector2(-1,+1),new vector2(+0,+1),],
+  ],
+  [
+    [new vector2(+0,+0),new vector2(-1,+0),new vector2(+1,+0),new vector2(+1,+1),],
+    [new vector2(+0,+0),new vector2(-1,+0),new vector2(+0,+1),new vector2(+1,+0),new vector2(+0,-2),],
+    [],
+    [new vector2(+0,+0),new vector2(+1,+0),new vector2(+1,-1),new vector2(+0,-1),new vector2(-1,+0),new vector2(+0,-2),new vector2(+2,+0),],
+  ],
+  [
+    [new vector2(+0,+0),new vector2(-1,+1),new vector2(+1,+0),new vector2(+0,-1),new vector2(+0,+2),new vector2(+0,+3),],
+    [new vector2(+0,+0),new vector2(+0,-1),new vector2(+1,-1),new vector2(+0,+1),],
+    [new vector2(+0,+0),new vector2(-1,+0),new vector2(+0,+1),new vector2(-1,+1),new vector2(+1,+0),new vector2(+0,+2),new vector2(-2,+0),],
+    [],
+  ],
+]
+
+const trsJ5:specificKickTable = [
+  [
+    [],
+    [new vector2(+0,+0),new vector2(-1,+0),new vector2(-1,+1),new vector2(+0,-3),new vector2(-1,+1),new vector2(-1,+2),new vector2(+0,+1),],
+    [new vector2(+0,+0),new vector2(+0,-1),new vector2(-1,-1),new vector2(+1,-1),new vector2(-1,+0),new vector2(+2,-1),],
+    [new vector2(+0,+0),new vector2(+0,-1),new vector2(+1,-1),new vector2(-1,+0),new vector2(+1,+1),new vector2(+0,-2),new vector2(+1,-2),new vector2(+0,-3),new vector2(+1,-3),new vector2(-1,+1),],
+  ],
+  [
+    [new vector2(+0,+0),new vector2(-1,+0),new vector2(+1,-1),new vector2(+0,+3),new vector2(+1,-1),new vector2(+1,-2),new vector2(+0,+1),],
+    [],
+    [new vector2(+0,+0),new vector2(+1,+0),new vector2(+1,-1),new vector2(+0,-1),new vector2(+1,-2),new vector2(+0,-2),new vector2(+1,+1),new vector2(-1,+0),new vector2(+0,+2),new vector2(+1,+2),],
+    [new vector2(+0,+0),new vector2(-1,+0),new vector2(-1,-1),new vector2(+0,+1),new vector2(-1,-2),],
+  ],
+  [
+    [new vector2(+0,+0),new vector2(+0,+1),new vector2(+1,+1),new vector2(-1,+1),new vector2(+1,+0),new vector2(-2,+1),],
+    [new vector2(+0,+0),new vector2(-1,+0),new vector2(-1,+1),new vector2(+0,+1),new vector2(-1,+2),new vector2(+0,+2),new vector2(-1,-1),new vector2(+1,+0),new vector2(+0,-2),new vector2(-1,-2),],
+    [],
+    [new vector2(+0,+0),new vector2(+1,+0),new vector2(+1,-1),new vector2(+1,+1),new vector2(-1,+0),new vector2(+0,-2),new vector2(+1,-2),new vector2(+0,+2),],
+  ],
+  [
+    [new vector2(+0,+0),new vector2(+0,+1),new vector2(-1,+1),new vector2(+1,+0),new vector2(-1,-1),new vector2(+0,+2),new vector2(-1,+2),new vector2(+0,+3),new vector2(-1,+3),new vector2(+1,-1),],
+    [new vector2(+0,+0),new vector2(+1,+0),new vector2(+1,+1),new vector2(+0,-1),new vector2(+1,+2),],
+    [new vector2(+0,+0),new vector2(-1,+0),new vector2(-1,+1),new vector2(-1,-1),new vector2(+1,+0),new vector2(+0,+2),new vector2(-1,+2),new vector2(+0,-2),],
+    [],
+  ],
+]
+
+const trsR:specificKickTable = [
+  [
+    [],
+    [new vector2(+0,+0),new vector2(-1,+0),new vector2(-1,+1),new vector2(+1,+0),new vector2(-1,+2),new vector2(-1,-1),new vector2(+0,-3),new vector2(+0,+1),],
+    [new vector2(+0,+0),new vector2(+0,-1),new vector2(+1,-1),new vector2(-1,+0),new vector2(+2,-1),new vector2(+0,+1),],
+    [new vector2(+0,+0),new vector2(+0,-1),new vector2(+1,+0),new vector2(+0,+1),new vector2(+1,-1),new vector2(-1,+0),new vector2(+1,+1),new vector2(+0,-2),new vector2(+1,-2),new vector2(+0,-3),new vector2(+1,-3),new vector2(-1,+1),],
+  ],
+  [
+    [new vector2(+0,+0),new vector2(-1,+0),new vector2(+1,+0),new vector2(+1,-1),new vector2(+1,-2),new vector2(+1,+1),new vector2(+0,+3),new vector2(+0,+1),],
+    [],
+    [new vector2(+0,+0),new vector2(+1,+0),new vector2(+1,-1),new vector2(+0,-1),new vector2(+1,-2),new vector2(+0,-2),new vector2(+1,+1),new vector2(-1,+0),new vector2(+0,+2),new vector2(+1,+2),],
+    [new vector2(+0,+0),new vector2(-1,+0),new vector2(-1,-1),new vector2(+0,+1),new vector2(-1,-2),],
+  ],
+  [
+    [new vector2(+0,+0),new vector2(+0,+1),new vector2(-1,+1),new vector2(+1,+0),new vector2(-2,+1),new vector2(+0,-1),],
+    [new vector2(+0,+0),new vector2(-1,+0),new vector2(-1,+1),new vector2(+0,+1),new vector2(-1,+2),new vector2(+0,+2),new vector2(-1,-1),new vector2(+1,+0),new vector2(+0,-2),new vector2(-1,-2),],
+    [],
+    [new vector2(+0,+0),new vector2(+0,+1),new vector2(+1,+0),new vector2(+1,-1),new vector2(+1,+1),new vector2(-1,+0),new vector2(+0,-2),new vector2(+1,-2),new vector2(+0,+2),],
+  ],
+  [
+    [new vector2(+0,+0),new vector2(+0,-1),new vector2(-1,+0),new vector2(+0,+1),new vector2(-1,+1),new vector2(+1,+0),new vector2(-1,-1),new vector2(+0,+2),new vector2(-1,+2),new vector2(+0,+3),new vector2(-1,+3),new vector2(+1,-1),],
+    [new vector2(+0,+0),new vector2(+1,+0),new vector2(+1,+1),new vector2(+0,-1),new vector2(+1,+2),],
+    [new vector2(+0,+0),new vector2(+0,-1),new vector2(-1,+0),new vector2(-1,+1),new vector2(-1,-1),new vector2(+1,+0),new vector2(+0,+2),new vector2(-1,+2),new vector2(+0,-2),],
+    [],
+  ],
+]
+
+const trsN:specificKickTable = [
+  [
+    [],
+    [new vector2(+0,+0),new vector2(-1,+0),new vector2(-1,+1),new vector2(+0,+1),new vector2(+1,+0),new vector2(+1,+1),new vector2(-1,+2),new vector2(-2,+0),new vector2(+0,-2),],
+    [new vector2(+0,+0),new vector2(-1,+0),new vector2(+0,+2),new vector2(+0,-1),],
+    [new vector2(+0,+0),new vector2(-1,+0),new vector2(+1,-1),new vector2(+0,-2),new vector2(+0,-3),new vector2(+1,+0),new vector2(+1,-2),new vector2(+1,-3),new vector2(+0,+1),new vector2(-1,+1),],
+  ],
+  [
+    [new vector2(+0,+0),new vector2(+1,+0),new vector2(-1,+0),new vector2(+0,-1),new vector2(-1,-1),new vector2(+1,-1),new vector2(+1,-2),new vector2(+2,+0),new vector2(+0,+2),],
+    [],
+    [new vector2(+0,+0),new vector2(-1,+0),new vector2(+1,-1),new vector2(-1,-1),new vector2(+1,-2),new vector2(+1,+0),new vector2(+0,-2),new vector2(+1,-3),new vector2(-1,+2),new vector2(+0,+3),new vector2(-1,+3),],
+    [new vector2(+0,+0),new vector2(-1,+0),new vector2(-1,-1),new vector2(+0,+1),new vector2(+1,+2),],
+  ],
+  [
+    [new vector2(+0,+0),new vector2(+1,+0),new vector2(+0,-2),new vector2(+0,+1),],
+    [new vector2(+0,+0),new vector2(-1,+0),new vector2(+1,-1),new vector2(+1,+1),new vector2(+0,-2),new vector2(+0,-3),new vector2(+1,+0),new vector2(+1,-2),new vector2(+1,-3),new vector2(+0,+1),new vector2(-1,+1),],
+    [],
+    [new vector2(+0,+0),new vector2(+0,-2),new vector2(+0,-3),new vector2(+1,+2),new vector2(+1,+0),new vector2(+0,+1),new vector2(-1,+1),new vector2(+0,-1),new vector2(+0,+2),],
+  ],
+  [
+    [new vector2(+0,+0),new vector2(-1,+0),new vector2(+1,-1),new vector2(+1,-2),new vector2(+1,+0),new vector2(+0,-2),new vector2(+1,-3),new vector2(-1,+2),new vector2(+0,+3),new vector2(-1,+3),],
+    [new vector2(+0,+0),new vector2(+1,+0),new vector2(+1,+1),new vector2(+0,-1),new vector2(-1,-2),],
+    [new vector2(+0,+0),new vector2(-1,+0),new vector2(+0,-1),new vector2(-1,-2),new vector2(+1,-1),new vector2(+1,+0),new vector2(+1,+1),new vector2(+0,+2),new vector2(+0,+3),],
+    [],
+  ],
 ]
 
 const kickTables = Object.freeze({ //aware tetrio and akira have even piece wobble but techmino doesnt
@@ -444,6 +631,175 @@ const kickTables = Object.freeze({ //aware tetrio and akira have even piece wobb
             [vector2.zero],
         ],
     ],
+    [kickType.X]:[
+        [
+            [vector2.zero],
+            [vector2.zero],
+            [vector2.zero],
+            [vector2.zero],
+        ],
+        [
+            [vector2.zero],
+            [vector2.zero],
+            [vector2.zero],
+            [vector2.zero],
+        ],
+        [
+            [vector2.zero],
+            [vector2.zero],
+            [vector2.zero],
+            [vector2.zero],
+        ],
+        [
+            [vector2.zero],
+            [vector2.zero],
+            [vector2.zero],
+            [vector2.zero],
+        ],
+    ],
+
+    [kickType.T5]:[
+      [
+        [],
+        [new vector2(+0,+0),new vector2(+0,-1),new vector2(-1,-1),new vector2(+1,+0),new vector2(+1,+1),new vector2(+0,-3),new vector2(-1,+0),new vector2(+0,+2),new vector2(-1,+2),],
+        [new vector2(+0,+0),new vector2(+0,-1),new vector2(+0,+1),new vector2(+0,+2),],
+        [new vector2(+0,+0),new vector2(+0,-1),new vector2(+1,-1),new vector2(-1,+0),new vector2(-1,+1),new vector2(+0,-3),new vector2(+1,+0),new vector2(+0,+2),new vector2(+1,+2),],
+      ],
+      [
+        [new vector2(+0,+0),new vector2(+1,+0),new vector2(+0,-1),new vector2(-1,-1),new vector2(+0,-2),new vector2(-1,+1),new vector2(+0,-3),new vector2(+1,-2),new vector2(+0,+1),],
+        [],
+        [new vector2(+0,+0),new vector2(+1,+0),new vector2(-1,+0),new vector2(+0,-2),new vector2(+0,-3),new vector2(+0,+1),new vector2(-1,+1),],
+        [new vector2(+0,+0),new vector2(+1,+0),new vector2(-1,+1),new vector2(-2,+0),],
+      ],
+      [
+        [new vector2(+0,+0),new vector2(+0,-1),new vector2(+0,+1),new vector2(+0,-2),],
+        [new vector2(+0,+0),new vector2(+1,-1),new vector2(-1,+0),new vector2(+1,+0),new vector2(+0,-1),new vector2(+0,+2),new vector2(+0,+3),],
+        [],
+        [new vector2(+0,+0),new vector2(-1,-1),new vector2(+1,+0),new vector2(-1,+0),new vector2(+0,-1),new vector2(+0,+2),new vector2(+0,+3),],
+      ],
+      [
+        [new vector2(+0,+0),new vector2(-1,+0),new vector2(+0,-1),new vector2(+1,-1),new vector2(+0,-2),new vector2(+1,+1),new vector2(+0,-3),new vector2(-1,-2),new vector2(+0,+1),],
+        [new vector2(+0,+0),new vector2(-1,+0),new vector2(+1,+1),new vector2(+2,+0),],
+        [new vector2(+0,+0),new vector2(-1,+0),new vector2(+1,+0),new vector2(+0,-2),new vector2(+0,-3),new vector2(+0,+1),new vector2(+1,+1),],
+        [],
+      ],
+    ],
+    [kickType.U]:[
+      [
+        [],
+        [new vector2(+0,+0),new vector2(-1,+0),new vector2(-1,+1),new vector2(+0,-2),new vector2(-1,-2),],
+        [new vector2(+0,+0),new vector2(+0,+1),],
+        [new vector2(+0,+0),new vector2(+1,+0),new vector2(+1,+1),new vector2(+0,-2),new vector2(+1,-2),],
+      ],
+      [
+        [new vector2(+0,+0),new vector2(+1,+0),new vector2(+1,-1),new vector2(+0,+2),new vector2(+1,+2),],
+        [],
+        [new vector2(+0,+0),new vector2(+1,+0),new vector2(+1,-1),new vector2(+1,+1),],
+        [new vector2(+0,+0),new vector2(+0,-1),new vector2(+0,+1),new vector2(+1,+0),],
+      ],
+      [
+        [new vector2(+0,+0),new vector2(+0,-1),],
+        [new vector2(+0,+0),new vector2(-1,-1),new vector2(-1,+1),new vector2(-1,-1),],
+        [],
+        [new vector2(+0,+0),new vector2(+1,-1),new vector2(+1,+1),new vector2(+1,-1),],
+      ],
+      [
+        [new vector2(+0,+0),new vector2(-1,+0),new vector2(-1,-1),new vector2(+0,-2),new vector2(-1,+2),],
+        [new vector2(+0,+0),new vector2(+0,-1),new vector2(+0,+1),new vector2(-1,+0),],
+        [new vector2(+0,+0),new vector2(-1,+0),new vector2(-1,-1),new vector2(-1,+1),],
+        [],
+      ],
+    ],
+    [kickType.V]:[
+      [
+        [],
+        [new vector2(+0,+0),new vector2(+0,+1),new vector2(-1,+0),new vector2(+0,-2),new vector2(-1,-2),],
+        [new vector2(+0,+0),new vector2(-1,+1),new vector2(+1,-1),],
+        [new vector2(+0,+0),new vector2(+0,-1),new vector2(+0,+1),new vector2(+0,+2),],
+      ],
+      [
+        [new vector2(+0,+0),new vector2(+0,+1),new vector2(+1,+0),new vector2(+0,-2),new vector2(+1,-2),],
+        [],
+        [new vector2(+0,+0),new vector2(+0,-1),new vector2(+0,+1),new vector2(+0,+2),],
+        [new vector2(+0,+0),new vector2(+1,+1),new vector2(-1,-1),],
+      ],
+      [
+        [new vector2(+0,+0),new vector2(+1,-1),new vector2(-1,+1),],
+        [new vector2(+0,+0),new vector2(+0,-1),new vector2(+0,+1),new vector2(+0,-2),],
+        [],
+        [new vector2(+0,+0),new vector2(-1,+0),new vector2(+1,+0),],
+      ],
+      [
+        [new vector2(+0,+0),new vector2(+0,-1),new vector2(+0,+1),new vector2(+0,-2),],
+        [new vector2(+0,+0),new vector2(-1,-1),new vector2(+1,+1),],
+        [new vector2(+0,+0),new vector2(+1,+0),new vector2(-1,+0),],
+        [],
+      ],
+    ],
+    [kickType.W]:[
+      [
+        [],
+        [new vector2(+0,+0),new vector2(+0,-1),new vector2(-1,+0),new vector2(+1,+0),new vector2(+1,-1),new vector2(+0,+2),],
+        [new vector2(+0,+0),new vector2(+0,-1),new vector2(-1,+0),],
+        [new vector2(+0,+0),new vector2(+1,+0),new vector2(+1,+1),new vector2(+0,-1),new vector2(+0,-2),new vector2(+0,-3),new vector2(+1,-1),new vector2(+0,+1),new vector2(+0,+2),new vector2(+0,+3),],
+      ],
+      [
+        [new vector2(+0,+0),new vector2(+0,-1),new vector2(-1,-1),new vector2(+0,+1),new vector2(+0,-2),new vector2(+1,-2),new vector2(+0,+2),],
+        [],
+        [new vector2(+0,+0),new vector2(+1,+0),new vector2(+0,-1),new vector2(-2,+0),new vector2(+1,+1),new vector2(-1,+0),new vector2(+0,+1),new vector2(-1,-1),],
+        [new vector2(+0,+0),new vector2(+0,+1),new vector2(-1,+0),],
+      ],
+      [
+        [new vector2(+0,+0),new vector2(+0,+1),new vector2(+1,+0),],
+        [new vector2(+0,+0),new vector2(-1,+0),new vector2(+0,-1),new vector2(+2,+0),new vector2(-1,+1),new vector2(+1,+0),new vector2(+0,+1),new vector2(+1,-1),],
+        [],
+        [new vector2(+0,+0),new vector2(+0,-1),new vector2(+1,-1),new vector2(+0,+1),new vector2(+0,-2),new vector2(-1,-2),new vector2(+0,+2),],
+      ],
+      [
+        [new vector2(+0,+0),new vector2(-1,+0),new vector2(-1,+1),new vector2(+0,-1),new vector2(+0,-2),new vector2(+0,-3),new vector2(-1,-1),new vector2(+0,+1),new vector2(+0,+2),new vector2(+0,+3),],
+        [new vector2(+0,+0),new vector2(+0,-1),new vector2(+1,+0),],
+        [new vector2(+0,+0),new vector2(+0,-1),new vector2(+1,+0),new vector2(+0,+1),new vector2(-1,+0),new vector2(-1,-1),new vector2(+0,+2),],
+        [],
+      ],
+    ],
+    [kickType.I5]:RotationalSymmetry180([
+      [
+        [],
+        [new vector2(+0,+0),new vector2(+1,-1),new vector2(+1,+0),new vector2(+1,+1),new vector2(+0,+1),new vector2(-1,+1),new vector2(-1,+0),new vector2(-1,-1),new vector2(+0,-1),new vector2(+0,-2),new vector2(-2,-1),new vector2(-2,-2),new vector2(+2,+0),new vector2(+2,-1),new vector2(+2,-2),new vector2(+1,+2),new vector2(+2,+2),new vector2(-1,+2),new vector2(-2,+2),],
+        [],
+        [new vector2(+0,+0),new vector2(-1,-1),new vector2(-1,+0),new vector2(-1,+1),new vector2(+0,+1),new vector2(+1,+1),new vector2(+1,+0),new vector2(+1,-1),new vector2(+0,-1),new vector2(+0,-2),new vector2(+2,-1),new vector2(+2,-2),new vector2(-2,+0),new vector2(-2,-1),new vector2(-2,-2),new vector2(-1,+2),new vector2(-2,+2),new vector2(+1,+2),new vector2(+2,+2),],
+      ],
+      [
+        [new vector2(+0,+0),new vector2(-1,+0),new vector2(-1,-1),new vector2(+0,-1),new vector2(+1,-1),new vector2(-2,-2),new vector2(-2,-1),new vector2(-2,+0),new vector2(-1,-2),new vector2(+0,-2),new vector2(+1,-2),new vector2(+2,-2),new vector2(-1,+1),new vector2(-2,+1),new vector2(-2,+2),new vector2(+1,+0),new vector2(+2,+0),new vector2(+2,-1),new vector2(+0,+1),new vector2(+1,-1),new vector2(+2,-2),],
+        [],
+        [],
+        [],
+      ],
+      [
+        [],
+        [],
+        [],
+        [],
+      ],
+      [
+        [new vector2(+0,+0),new vector2(+1,+0),new vector2(+1,-1),new vector2(+0,-1),new vector2(-1,-1),new vector2(+2,-2),new vector2(+2,-1),new vector2(+2,+0),new vector2(+1,-2),new vector2(+0,-2),new vector2(-1,-2),new vector2(-2,-2),new vector2(+1,+1),new vector2(+2,+1),new vector2(+2,+2),new vector2(-1,+0),new vector2(-2,+0),new vector2(-2,-1),new vector2(+0,+1),new vector2(-1,-1),new vector2(-2,-2),],
+        [],
+        [],
+        [],
+      ],
+    ]),
+    [kickType.Z5]:trsZ5,
+    [kickType.S5]:reflected(trsZ5),
+    [kickType.P]:trsP,
+    [kickType.Q]:reflected(trsP),
+    [kickType.F]:trsF,
+    [kickType.K]:reflected(trsF),
+    [kickType.J5]:trsJ5,
+    [kickType.L5]:reflected(trsJ5),
+    [kickType.R]:trsR,
+    [kickType.Y]:reflected(trsR),
+    [kickType.N]:trsN,
+    [kickType.H]:reflected(trsN),
   }
 });
 
@@ -451,8 +807,8 @@ const kickChecks = Object.freeze({
   "cultris":[
       new vector2(0,0),new vector2(-1,0),new vector2(1,0),new vector2(0,-1),new vector2(-1,-1),new vector2(1,-1),new vector2(-2,0),new vector2(2,0),
   ],
-  "lazysrs":[
-      new vector2(0,0),new vector2(-1,0),new vector2(1,0),new vector2(0,-1),new vector2(-1,-1),new vector2(1,-1),new vector2(0,-2),new vector2(-1,-2),new vector2(1,-2),new vector2(0,2),new vector2(-1,2),new vector2(1,2),new vector2(-2,0),new vector2(2,0),new vector2(0,1),new vector2(-1,1),new vector2(1,1),
+  "lazyrs":[
+      new vector2(0,0),new vector2(-1,0),new vector2(1,0),new vector2(0,-1),new vector2(-1,-1),new vector2(1,-1),new vector2(0,-2),new vector2(-1,-2),new vector2(1,-2),new vector2(0,1),new vector2(-1,1),new vector2(1,1),new vector2(0,2),new vector2(-1,2),new vector2(1,2),new vector2(-2,0),new vector2(2,0),
   ]
 })
 
@@ -480,79 +836,100 @@ function* basicOffsetKickTables(_kickType:kickType,specificKickTable:vector2[][]
 }
 
 export const kickSystems = Object.freeze({
-    "trueNone":function*(_kickType:kickType,fromRot:number,toRot:number){
+    "trueNone":function*(_piece:piece,fromRot:number,toRot:number){
         yield new vector2(0,0);
     },
-    "none":function*(_kickType:kickType,fromRot:number,toRot:number){
-        let skickType = simplifyKickType(_kickType)
-        for(const shift of offsetTable(rs.offsetTables.none[skickType],fromRot,toRot))
-            yield shift;
+    "none":function*(_piece:piece,fromRot:number,toRot:number){
+      const _kickType = _piece.kickType
+      let skickType = simplifyKickType(_kickType)
+      for(const shift of offsetTable(rs.offsetTables.none[skickType],fromRot,toRot))
+          yield shift;
     },
-    "righthanded":function*(_kickType:kickType,fromRot:number,toRot:number){
-        let skickType = simplifyKickType(_kickType)
-        for(const shift of offsetTable(rs.offsetTables.rightHanded[skickType],fromRot,toRot))
-            yield shift;
+    "righthanded":function*(_piece:piece,fromRot:number,toRot:number){
+      const _kickType = _piece.kickType
+      let skickType = simplifyKickType(_kickType)
+      for(const shift of offsetTable(rs.offsetTables.rightHanded[skickType],fromRot,toRot))
+          yield shift;
     },
-    "SRS":function*(_kickType:kickType,fromRot:number,toRot:number){
-        let skickType = simplifyKickType(_kickType)
-        for(const shift of offsetTable(rs.offsetTables.SRS[skickType],fromRot,toRot))
-            yield shift;
+    "SRS":function*(_piece:piece,fromRot:number,toRot:number){
+      const _kickType = _piece.kickType
+      let skickType = simplifyKickType(_kickType)
+      for(const shift of offsetTable(rs.offsetTables.SRS[skickType],fromRot,toRot))
+          yield shift;
     },
-    "worldwidecombos":function*(_kickType:kickType,fromRot:number,toRot:number){
-        let skickType = simplifyKickType(_kickType)
-        if(Math.abs(fromRot-toRot)===2){
-          fromRot++;
-          fromRot%=4;
-        }
-        for(const shift of offsetTable(rs.offsetTables.SRS[skickType],fromRot,toRot))
-            yield shift;
+    "worldwidecombos":function*(_piece:piece,fromRot:number,toRot:number){
+      const _kickType = _piece.kickType
+      let skickType = simplifyKickType(_kickType)
+      if(Math.abs(fromRot-toRot)===2){
+        fromRot++;
+        fromRot%=4;
+      }
+      for(const shift of offsetTable(rs.offsetTables.SRS[skickType],fromRot,toRot))
+          yield shift;
     },
-    "akira":function*(_kickType:kickType,fromRot:number,toRot:number){
-        let skickType = simplifyKickType(_kickType)
-        if(_kickType===kickType.I&&Math.abs(fromRot-toRot)!==2&&fromRot!==toRot)
-            for(const shift of kickTable(rs.kickTables.akira[kickType.I],fromRot,toRot))
-                yield shift;
-        else
-            for(const shift of offsetTable(rs.offsetTables.SRS[skickType],fromRot,toRot))
-                yield shift;
+    "akira":function*(_piece:piece,fromRot:number,toRot:number){
+      const _kickType = _piece.kickType
+      let skickType = simplifyKickType(_kickType)
+      if(_kickType===kickType.I&&Math.abs(fromRot-toRot)!==2&&fromRot!==toRot)
+          for(const shift of kickTable(rs.kickTables.akira[kickType.I],fromRot,toRot))
+              yield shift;
+      else
+          for(const shift of offsetTable(rs.offsetTables.SRS[skickType],fromRot,toRot))
+              yield shift;
     },
-    "tetrio":function*(_kickType:kickType,fromRot:number,toRot:number){
-        let skickType = simplifyKickType(_kickType)
-        if(Math.abs(fromRot-toRot)===2){
-            for(const shift of kickTable(rs.kickTables.tetrio[kickType.none],fromRot,toRot))
-                yield shift;
-        }else{
-            if(_kickType === kickType.I)
-                for(const shift of kickTable(rs.kickTables.tetrio[kickType.I],fromRot,toRot))
-                    yield shift;
-            else
-                for(const shift of offsetTable(rs.offsetTables.tetrio[skickType],fromRot,toRot))
-                    yield shift;
-        }
+    "tetrio":function*(_piece:piece,fromRot:number,toRot:number){
+      const _kickType = _piece.kickType
+      let skickType = simplifyKickType(_kickType)
+      if(Math.abs(fromRot-toRot)===2){
+          for(const shift of kickTable(rs.kickTables.tetrio[kickType.none],fromRot,toRot))
+              yield shift;
+      }else{
+          if(_kickType === kickType.I)
+              for(const shift of kickTable(rs.kickTables.tetrio[kickType.I],fromRot,toRot))
+                  yield shift;
+          else
+              for(const shift of offsetTable(rs.offsetTables.tetrio[skickType],fromRot,toRot))
+                  yield shift;
+      }
     },
-    "techmino":function*(_kickType:kickType,fromRot:number,toRot:number){
-        for(const shift of basicOffsetKickTables(_kickType,rs.kickTables.techmino[_kickType],fromRot,toRot))
-            yield shift;
+    "techmino":function*(_piece:piece,fromRot:number,toRot:number){
+      var _kickType = _piece.ikickType
+      if(!_kickType || _kickType == kickType.auto)
+        _kickType = kickType.T
+
+      for(const shift of basicOffsetKickTables(_kickType,rs.kickTables.techmino[_kickType],fromRot,toRot))
+          yield shift;
     },
-    "cultris":function*(_kickType:kickType,fromRot:number,toRot:number){
+    "cultris":function*(_piece:piece,fromRot:number,toRot:number){
+      const _kickType = _piece.kickType
       const basicOffsets = rs.offsetTables.none[simplifyKickType(_kickType)]
       const basicOffset = basicOffsets[fromRot][0].sub(basicOffsets[toRot][0]);
 
       for(const shift of rs.kickChecks.cultris)
           yield shift.add(basicOffset);
     },
-    "lazysrs":function*(_kickType:kickType,fromRot:number,toRot:number){
+    "lazyrs":function*(_piece:piece,fromRot:number,toRot:number){
+      const _kickType = _piece.kickType
       const basicOffsets = rs.offsetTables.none[simplifyKickType(_kickType)]
       const basicOffset = basicOffsets[fromRot][0].sub(basicOffsets[toRot][0]);
 
       const rot = modular.displacement(fromRot,toRot,4)
 
-        for(const shift of rs.kickChecks.lazysrs){
+        for(const shift of rs.kickChecks.lazyrs){
           if(rot != -1)
             yield shift.hadamard(new vector2(-1,1)).add(basicOffset);
           else
             yield shift.add(basicOffset)
         }
+    },
+    "sorkurzdil":function*(_piece:piece,fromRot:number,toRot:number){
+      const _kickType = _piece.ikickType
+      if(_kickType==kickType.auto)
+        for(const i of kickSystems.lazyrs(_piece,fromRot,toRot))
+          yield i
+      else
+        for(const i of kickSystems.techmino(_piece,fromRot,toRot))
+          yield i
     },
 });
 

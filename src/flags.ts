@@ -29,4 +29,6 @@ export default class gameFlags{
     waveprogress = 0;
 
     negativeb2bmeter=false;
+    b2bbreak:number|undefined;
+    combobreak:number|undefined;
 }
