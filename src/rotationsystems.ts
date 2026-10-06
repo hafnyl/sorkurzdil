@@ -934,9 +934,9 @@ export const kickSystems = Object.freeze({
 });
 
 const rs ={
-    offsetTables:offsetTables,
-    kickTables:kickTables,
-    kickChecks:kickChecks,
+  offsetTables:offsetTables,
+  kickTables:kickTables,
+  kickChecks:kickChecks,
 }
 
 export default rs;

@@ -1,10 +1,28 @@
 halfway done
-- level select
-    - make level select more beautiful
+
+- where are the image particles
+    - indication for camera change with eye particle
+
+- puyo puyo garbage that falls from the sky
+    - the game picks pieces from a piece generator and drops them onto a board (and just retrying if it would clear a line because we dont want garbage to clear a line)
+
 - glue block garbage (by cabbage)
-- half pc
-    - colour clear
+    - glue block texture can it potentially extend out of the square
+    - then i have to potentially care about z order
+- other garbage models like bombs and metal (done but i didnt go look at what it looks like ingame)
+    - maybe string to pixel art kind of thing (done)
+    - oh yeah boolean operations between tile models and dithering stuff ~~instead of transparency (will it even look good)~~ use this for when pieces are white but hold isnt usable
+        - colours should be able to be multiplied with each other btw (potentially used for the warning thing)
+    - maybe connected tiles but its going to take so long to hardcode the many textures for each tile blehhh
+        - is there potentially 256 cases
+        - for tetrios connected textures they have like 24
+        - its actually still a lot if i want to do it for like every tile
+        - maybe its a feature for ugc stuff but i dont really want to type out alla that
+        - images to pieces when
+            - images to connected textures now its doable because image editing is way easier than typing string
+
 - sound effects
+    - i have to figure out how to play sounds from an atlas instead of like having a gigantic list of sound effects because this isnt game engine
 
 - other bags like pentominos (done)
     - bags with the font or just the seven sul|fir (done)
@@ -19,6 +37,9 @@ halfway done
     - upgrade the particle manager to use html elements instead of drawing to canvas
     - potentially get everything drawn using html instead of canvas???
 
+- level select
+    - make level select more beautiful
+    
 things to add
 - xspin ospin
     - i forgot whether i have a function to check for spin on arbitrary piece probably not i dont want to check right now
@@ -26,6 +47,9 @@ things to add
 - compact rendering mode with smaller queue and smaller levels (maybe it says line clears above the score)
 
 - hide the mouse when were playing the game
+
+- half pc
+    - colour clear
 
 - what if dithering
     - making the game render in a pixel way could be cool but its also going to be very hard to write and potentially expensive to draw
@@ -48,13 +72,15 @@ things to add
             - lockout zone
                 - what if there was a random disconnected lockout zone in the middle of the board
 
-- puyo puyo garbage that falls from the sky ?
-
 - a way to change settings
     - custom games
 
+- various ugc stuff
+    - custom pieces
+    - custom tile textures
+    - custom board starting layout
+
 - drought indicator
-    - indication for camera change with eye particle
     - talentless indicator
 
 - tetrio attacking

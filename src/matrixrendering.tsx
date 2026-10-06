@@ -277,10 +277,12 @@ export default class MatrixRendering {
 
         if(!showCOR||!this.game.gameConfig.allowRotation)return;
 
-        const offset = flipy(this.FSTL2(CORoffsets[simplifyKickType(piece.kickType)].rotate(piece.orientiation),tilesize));
+        const useoffset = CORoffsets[simplifyKickType(piece.kickType)]
+        const offset = flipy(this.FSTL2(useoffset.rotate(piece.orientiation),tilesize));
         let CORpos = screenpos.add(offset)
         this.ctx.globalAlpha *= this.game.userConfig.COROpacity
-        this.ctx.fillStyle = palette.one.toHex();
+        this.ctx.fillStyle = (_tileModel.whitebased && useoffset.sqMag() <= 0.01) ? palette.zro.toHex() : palette.one.toHex();
+        
         this.FillRect(CORpos.sub(this.CORsize.div(2)),this.CORsize,zoom,bypassboardoffset)
     }
 

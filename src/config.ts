@@ -489,6 +489,8 @@ export class gameConfig{
 
     boardscalar = vector2.one;
 
+    lodges = [new vector2(2,0),new vector2(-2,0),new vector2(0,-2),new vector2(1,-1),new vector2(-1,-1)];
+
     debug = false;
 
     strongproperties:string[] = [];

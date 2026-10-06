@@ -28,6 +28,7 @@ export class piece{
   orientiation=orientiation.north;
   chirality=vector2.one;
   symmetry=symmetry.none;
+  lodgeability=false;
 
   get kickType(){
     if(this.ikickType && this.ikickType != kickType.auto)
@@ -230,6 +231,12 @@ export class piece{
     robot.ikickType = _kickType;
     return robot;
   }
+
+  lodgeable(){
+    let robot = clone(this);
+    robot.lodgeability = true;
+    return robot;
+  }
 }
 
 export const pieces = Object.freeze({
@@ -268,7 +275,7 @@ export const pieces = Object.freeze({
   tileModels.O,
   kickType.O,
   "",
-  SpinType.none),
+  SpinType.none).lodgeable(),
 
   Z:
   new piece([
@@ -326,7 +333,16 @@ export const pieces = Object.freeze({
     new vector2(1,1),
     new vector2(0,1),
   ],
-  tileModel.tripleRing(palette.one,undefined,palette.two),
+  tileModel.fromString(`
+  &
+    
+    122133
+    222333
+    222333
+    133122
+    333222
+    333222
+    `),
   kickType.T,
   "s",
   SpinType.S),
@@ -337,7 +353,16 @@ export const pieces = Object.freeze({
     new vector2(1,0),
     new vector2(1,1),
   ],
-  tileModel.tripleRing(palette.two,undefined,palette.one),
+  tileModel.fromString(`
+  &
+    
+    122133
+    202303
+    222333
+    133122
+    303202
+    333222
+    `),
   kickType.T,
   "l",
   SpinType.T),
@@ -369,7 +394,7 @@ export const pieces = Object.freeze({
      #
     ###
      #
-    `,tileModels.T,"",kickType.X),
+    `,tileModels.T,"",kickType.X).lodgeable(),
   J5:piece.fromString(`
     #
     ####
@@ -430,7 +455,16 @@ export const pieces = Object.freeze({
     new vector2(1,0),
     new vector2(0,1),
   ],
-  tileModel.tripleRing(palette.one,palette.zro),
+  tileModel.fromString(`
+  &
+    
+    111111
+    102220
+    122222
+    102220
+    122222
+    102220
+    `),
   kickType.T,
   "",
   SpinType.immobilespin),
@@ -440,7 +474,16 @@ export const pieces = Object.freeze({
     new vector2(0,0),
     new vector2(1,0),
   ],
-  tileModel.tripleRing(palette.two,palette.zro),
+  tileModel.fromString(`
+  &
+    
+    111111
+    103330
+    133333
+    133033
+    133333
+    103330
+    `),
   kickType.T,
   "",
   SpinType.immobilespin),
@@ -449,7 +492,16 @@ export const pieces = Object.freeze({
     new vector2(0,0),
     new vector2(1,0),
   ],
-  tileModel.tripleRing(palette.tri,palette.zro),
+  tileModel.fromString(`
+  &
+    
+    111111
+    100002
+    100000
+    100200
+    100000
+    120000
+    `),
   kickType.T,
   "",
   SpinType.immobilespin),
@@ -457,10 +509,19 @@ export const pieces = Object.freeze({
   new piece([
     new vector2(0,0),
   ],
-  tileModel.tripleRing(palette.zro,palette.one),
+  tileModel.fromString(`
+  &
+    
+    111111
+    100000
+    100000
+    100300
+    100000
+    100000
+    `),
   kickType.T,
   "",
-  SpinType.immobilespin),
+  SpinType.immobilespin).lodgeable(),
 
   //-----novelties
   //jump square and jump square derivatives
@@ -664,15 +725,15 @@ export const bagprefabs = Object.freeze({
     pieces['o1'],
   ],
   fixedM123: [
-    pieces['l3'].rotated(0).withModel(tileModel.tripleRing(colour3.fromHSV( 0/9,0.6901,0.9490),palette.one)).withRotationCleared(),
-    pieces['l3'].rotated(1).withModel(tileModel.tripleRing(colour3.fromHSV( 1/9,0.6901,0.9490),palette.one)).withRotationCleared(),
-    pieces['l3'].rotated(2).withModel(tileModel.tripleRing(colour3.fromHSV( 2/9,0.6901,0.9490),palette.one)).withRotationCleared(),
-    pieces['l3'].rotated(3).withModel(tileModel.tripleRing(colour3.fromHSV( 3/9,0.6901,0.9490),palette.one)).withRotationCleared(),
-    pieces['i3'].rotated(0).withModel(tileModel.tripleRing(colour3.fromHSV( 4/9,0.6901,0.9490),palette.one)).withRotationCleared(),
-    pieces['i3'].rotated(1).withModel(tileModel.tripleRing(colour3.fromHSV( 5/9,0.6901,0.9490),palette.one)).withRotationCleared(),
-    pieces['i2'].rotated(0).withModel(tileModel.tripleRing(colour3.fromHSV( 6/9,0.6901,0.9490),palette.one)).withRotationCleared(),
-    pieces['i2'].rotated(1).withModel(tileModel.tripleRing(colour3.fromHSV( 7/9,0.6901,0.9490),palette.one)).withRotationCleared(),
-    pieces['o1'].rotated(0).withModel(tileModel.tripleRing(colour3.fromHSV( 8/9,0.6901,0.9490),palette.one)).withRotationCleared(),
+    pieces['l3'].rotated(0).withModel(new tileModel(colour3.fromHSV( 0/9,0.6901,0.9490))).withRotationCleared(),
+    pieces['l3'].rotated(1).withModel(new tileModel(colour3.fromHSV( 1/9,0.6901,0.9490))).withRotationCleared(),
+    pieces['l3'].rotated(2).withModel(new tileModel(colour3.fromHSV( 2/9,0.6901,0.9490))).withRotationCleared(),
+    pieces['l3'].rotated(3).withModel(new tileModel(colour3.fromHSV( 3/9,0.6901,0.9490))).withRotationCleared(),
+    pieces['i3'].rotated(0).withModel(new tileModel(colour3.fromHSV( 4/9,0.6901,0.9490))).withRotationCleared(),
+    pieces['i3'].rotated(1).withModel(new tileModel(colour3.fromHSV( 5/9,0.6901,0.9490))).withRotationCleared(),
+    pieces['i2'].rotated(0).withModel(new tileModel(colour3.fromHSV( 6/9,0.6901,0.9490))).withRotationCleared(),
+    pieces['i2'].rotated(1).withModel(new tileModel(colour3.fromHSV( 7/9,0.6901,0.9490))).withRotationCleared(),
+    pieces['o1'].rotated(0).withModel(new tileModel(colour3.fromHSV( 8/9,0.6901,0.9490))).withRotationCleared(),
   ],
   sulfir: [
     piece.fromString(`

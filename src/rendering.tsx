@@ -137,7 +137,7 @@ export class rendering {
         }
     }
 
-    NameLineClear(piecejustplaced:piece,lines:number,spin:boolean,mini:boolean,immobile:boolean){
+    NameLineClear(piecejustplaced:piece,lines:number,spin:boolean,mini:boolean,immobile:boolean,lodge:boolean,morph:boolean){
         const clearname = clearNames[Math.min(lines,clearNames.length)];
         const somspin = spin || immobile || mini;
 
@@ -182,28 +182,30 @@ export class rendering {
             return [clearname,colouroverride||palette.one.toHex()];
         }
 
-        if(lines > 1)
-            return [(((mini && !spin) ? "mini " : "")
+        var special = ""
+        if(immobile)
+            special = " immobile"
+        if(morph)
+            special = " morph"
+        if(lodge)
+            special = " lodge"
+
+        const fullclearname = (((mini && !spin) ? "mini " : "")
                 + piecejustplaced.name
                 + ((spin || mini) ? " spin " : " ")
                 + clearNames[Math.min(lines,clearNames.length)]
-                + ((immobile && !spin && !mini) ? " immobile" : "")), 
-                colouroverride||piecejustplaced.tileModel.firstcolour.toHex()];
+                + special)
+
+        if(colouroverride)
+            return [fullclearname,colouroverride]
+
+        if(lines > 1)
+            return [fullclearname,piecejustplaced.tileModel.firstcolour.toHex()];
 
         if(lines > 0)
-            return [(((mini && !spin) ? "mini " : "")
-                + piecejustplaced.name
-                + ((spin || mini) ? " spin " : " ")
-                + clearNames[Math.min(lines,clearNames.length)]
-                + ((immobile && !spin && !mini) ? " immobile" : "")), 
-                colouroverride||palette.one.toHex()];
+            return [fullclearname, palette.two.toHex()];
 
-        return [(((mini && !spin) ? "mini " : "")
-            + piecejustplaced.name
-            + ((spin || mini) ? " spin " : " ")
-            + clearNames[Math.min(lines,clearNames.length)]
-            + ((immobile && !spin && !mini) ? " immobile" : "")), 
-            colouroverride||palette.one.toHex()];
+        return [fullclearname, palette.one.toHex()];
     }
 
     lineclearalertexpiretime = 3000
@@ -217,7 +219,7 @@ export class rendering {
 
         if(!_alert.spin && !_alert.immobile && !_alert.mini && _alert.lines === 0) return false
 
-        const [lineclearname, lineclearcolour] = this.NameLineClear(_alert.piecejustplaced,_alert.lines,_alert.spin,_alert.mini,_alert.immobile)
+        const [lineclearname, lineclearcolour] = this.NameLineClear(_alert.piecejustplaced,_alert.lines,_alert.spin,_alert.mini,_alert.immobile,_alert.lodge,_alert.morph)
         
         if(_alert.lines < 23){
             var t = age/this.lineclearalertexpiretime

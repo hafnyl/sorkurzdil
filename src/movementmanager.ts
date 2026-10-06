@@ -13,6 +13,8 @@ export type lockReport={
     spin:boolean,
     mini:boolean,
     immobile:boolean,
+    lodge:boolean,
+    morph:boolean,
     gimmickReport:gimmickReport,
 }
 
@@ -176,11 +178,11 @@ export default class MovementManager{
         return dropHeight;
     }
 
-    ValidPiece(_piece:piece,shift:vector2=vector2.zero){
+    ValidPiece(_piece:piece,shift:vector2=vector2.zero,position:vector2=this.board.activeposition){
         for (const offset of _piece.tileoffsets){
-            if(this.game.gameConfig.activepiecephasethroughblocks && !this.board.matrix.InBounds(this.board.activeposition.add(offset).add(shift)))
+            if(this.game.gameConfig.activepiecephasethroughblocks && !this.board.matrix.InBounds(position.add(offset).add(shift)))
                 return false
-            if(!this.game.gameConfig.activepiecephasethroughblocks && !this.board.matrix.IsValid(this.board.activeposition.add(offset).add(shift)))
+            if(!this.game.gameConfig.activepiecephasethroughblocks && !this.board.matrix.IsValid(position.add(offset).add(shift)))
                 return false;
         }
         return true;
@@ -211,6 +213,7 @@ export default class MovementManager{
 
             this.spineligible = false;
             this.minieligible = false;
+            this.justlodged = false;
 
             this.game.flags.nongravitydisplacementthisframe = this.game.flags.nongravitydisplacementthisframe.add(shift);
 
@@ -271,6 +274,33 @@ export default class MovementManager{
         return false
     }
 
+    justlodged = false
+    morphed = false
+
+    AttemptLodge(){
+        if(!this.board.activepiece)
+            return false
+
+        for(const i of this.game.gameConfig.lodges){
+            if(!this.ValidPiece(this.board.activepiece,i)) continue
+
+            const [spin,mini,immobile] = this.SpinDetection(this.board.activeposition.add(i))
+            console.log("eoua2")
+            console.log(i)
+            if(spin || mini || immobile){
+                console.log("eoua")
+                console.log(i)
+                console.log(this.board.activeposition)
+                this.board.activeposition = this.board.activeposition.add(i)
+                console.log(this.board.activeposition)
+                this.justlodged = true
+                return true
+            }
+        }
+
+        return false
+    }
+
     //still 90 degree clockwise turns
     Rotate(turns:number){
         if(!this.board.activepiece)
@@ -284,9 +314,13 @@ export default class MovementManager{
 
             const [spin,mini,immobile] = this.SpinDetection();
             this.game.flags.justspinned = spin || mini || immobile;
+            this.justlodged = false
 
             this.EarlyLock();
         }
+
+        if(this.board.activepiece.lodgeability)
+            this.AttemptLodge()
     }
 
     Hadamard(other:vector2){
@@ -298,6 +332,7 @@ export default class MovementManager{
 
             const [spin,mini,immobile] = this.SpinDetection();
             this.game.flags.justspinned = spin || mini || immobile;
+            this.justlodged = false
             
             this.EarlyLock();
         }
@@ -421,20 +456,19 @@ export default class MovementManager{
         this.lockcancelsused = 0;
         this.spineligible = false;
         this.minieligible = false;
+        this.justlodged = false
 
         this.game.flags.piecechange = true;
     }
     
-    SpinDetection(){
-        if (!this.board.activepiece)
+    SpinDetection(position:vector2=this.board.activeposition,_piece:piece|undefined=this.board.activepiece){
+        if (!_piece)
             throw new Error("spin no piece");
-        if (!this.spineligible)
-            return [false,false,false]
 
         var immobile = true;
 
         for(const offset of [vector2.up,vector2.down,vector2.left,vector2.right])
-            if (this.ValidShift(offset)){
+            if (this.ValidPiece(_piece,offset,position)){
                 immobile = false
                 break
             }
@@ -442,29 +476,29 @@ export default class MovementManager{
         var spin = false;
         var mini = false;
         
-        const relativeright = vector2.right.rotate(4-this.board.activepiece.orientiation);
-        const relativeup = vector2.up.rotate(4-this.board.activepiece.orientiation);
+        const relativeright = vector2.right.rotate(4-_piece.orientiation);
+        const relativeup = vector2.up.rotate(4-_piece.orientiation);
         //im just making stuff up at this point (tspins work the same way as before but i have to extend it to work for other stuff as well)
         var greatchecks = 0;
         for(const offset of [vector2.up,vector2.left,vector2.right,new vector2(1,1),new vector2(-1,1)]){
-            if(!this.board.matrix.IsValid(this.board.activeposition.add(offset.orient(relativeright,relativeup)))) 
+            if(!this.board.matrix.IsValid(position.add(offset.orient(relativeright,relativeup)))) 
                 greatchecks++;
         }
         
         var minichecks = 0;
         for(const offset of [vector2.down,new vector2(1,-1),new vector2(-1,-1)])
-            if(!this.board.matrix.IsValid(this.board.activeposition.add(offset.orient(relativeright,relativeup)))) 
+            if(!this.board.matrix.IsValid(position.add(offset.orient(relativeright,relativeup)))) 
                 minichecks++;
         
         var lodgechecks = 0; //only for i
         for(const offset of [vector2.up,vector2.down,new vector2(1,1),new vector2(1,-1)])
-            if(!this.board.matrix.IsValid(this.board.activeposition.add(offset.orient(relativeright,relativeup)))) 
+            if(!this.board.matrix.IsValid(position.add(offset.orient(relativeright,relativeup)))) 
                 lodgechecks++;
 
         
         switch(this.game.gameConfig.spinDetection){
             case spinDetection.tspin:
-                if(this.board.activepiece.spinType!==SpinType.T) break
+                if(_piece.spinType!==SpinType.T) break
             case spinDetection.threecorner:
                 if(greatchecks >=2 && minichecks >= 1)
                     spin = true
@@ -487,7 +521,7 @@ export default class MovementManager{
                     spin = true;
                     mini = false;
                 }
-                if(this.board.activepiece.spinType!==SpinType.T) {
+                if(_piece.spinType!==SpinType.T) {
                     mini = spin
                     spin = false
                 }
@@ -496,13 +530,13 @@ export default class MovementManager{
                 }
                 break
             case spinDetection.sorkurzdil: //my own spin checks yippee (they kind of suck)
-                if(this.board.activepiece.spinType === SpinType.T){
+                if(_piece.spinType === SpinType.T){
                     if(greatchecks >=2 && minichecks >= 1)
                         spin = true
                     else if(greatchecks >=1 && minichecks >= 2)
                         mini = true
                 }
-                if(this.board.activepiece.spinType === SpinType.S){
+                if(_piece.spinType === SpinType.S){
                     if(greatchecks >=2)
                         spin = true
                     else if(greatchecks >=1 && minichecks >= 2 && immobile)
@@ -510,13 +544,13 @@ export default class MovementManager{
                     else if(greatchecks >=1 && immobile)
                         mini = true
                 }
-                if(this.board.activepiece.spinType === SpinType.I){
+                if(_piece.spinType === SpinType.I){
                     if(lodgechecks >= 1 && immobile)
                         spin = true
                     else if(immobile)
                         mini = true
                 }
-                if (this.board.activepiece.spinType === SpinType.immobilespin){
+                if (_piece.spinType === SpinType.immobilespin){
                     spin = immobile;
                 }
         
@@ -564,7 +598,9 @@ export default class MovementManager{
         if(this.game.gameConfig.verticallineclears && !this.StrictlyInBounds(vector2.zero))
             return
 
-        const [spin, mini, immobile] = this.SpinDetection()
+        var [spin, mini, immobile] = this.SpinDetection()
+        if (!this.spineligible)
+            [spin, mini, immobile] = [false,false,false]
 
         var runninggimmick = new gimmickReport();
         for(const i of this.game.gameConfig.prelock){
@@ -584,6 +620,8 @@ export default class MovementManager{
                 spin:spin,
                 mini:mini,
                 immobile:immobile,
+                lodge:this.justlodged,
+                morph:this.morphed,
                 gimmickReport:runninggimmick
             })
         }

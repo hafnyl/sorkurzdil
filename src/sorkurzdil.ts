@@ -320,9 +320,9 @@ export class gameManager{
             else if(lines == 3)
                 this.game.meter += 3.6;
             else if(lines == 4)
-                this.game.meter += 16;
+                this.game.meter += 5;
             else if(lines >= 5)
-                this.game.meter += 20;
+                this.game.meter += 6;
         }else if(!pc){
             if(lines >= 1){
                 this.game.meter -= 5;
@@ -333,7 +333,7 @@ export class gameManager{
         }
 
         if(pc && this.game.lines > 8)
-            this.game.meter += 16;
+            this.game.meter += Math.max(6,Math.min(16,20-this.game.meter));
 
         var healthdeath = this.game.meter < 0;
 
@@ -553,6 +553,8 @@ export class gameManager{
             spin:lr.spin,
             mini:lr.mini,
             immobile:lr.immobile,
+            lodge:lr.lodge,
+            morph:lr.morph,
             combo:this.game.combo,
         })
             

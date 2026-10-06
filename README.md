@@ -11,4 +11,6 @@ known bugs
 - sometimes lines hang around for one frame even though the line clear are is supposed to be zero
 ~~if a bug is easily encountered and recreatable i would probably have fixed it by now~~
 
+- you can highlight the ready set go text which is probably very easy to fix i dont know why i havent fixed it yet
+
 the font is a modified version of bytesized by baltdev, i added a bunch of minos starting from \uEA00

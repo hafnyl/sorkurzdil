@@ -9,6 +9,8 @@ export type lineclearalert={
     spin:boolean,
     mini:boolean,
     immobile:boolean,
+    lodge:boolean,
+    morph:boolean,
     combo:number,
 }
 

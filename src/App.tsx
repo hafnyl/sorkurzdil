@@ -32,7 +32,12 @@ _gameConfig.debug = true;
 
 //_gameConfig.kickSystem = kickSystems.lazyrs
 //_gameConfig.pieceChoice = new Fool(bagprefabs.tetrominos,[pieces.krux],28,1)
-_gameConfig.pieceChoice = new BasePieceGenerator(bagprefabs.pentominos)
+_gameConfig.pieceChoice = new BasePieceGenerator(bagprefabs.pentominos.concat(bagprefabs.m123).concat(bagprefabs.freeTetrominos))
+//_gameConfig.pieceChoice = new BasePieceGenerator(bagprefabs.m123)
+
+//_gameConfig.Splice(configs.m123)
+
+_userConfig.boardGreying = false
 
 _userConfig.sdf = 1/0
 //_userConfig.usesdarr = true;

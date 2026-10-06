@@ -22,7 +22,7 @@ OS2Version: 4
 OS2_WeightWidthSlopeOnly: 0
 OS2_UseTypoMetrics: 1
 CreationTime: 1738461679
-ModificationTime: 1791202722
+ModificationTime: 1791220564
 PfmFamily: 17
 TTFWeight: 400
 TTFWidth: 5
@@ -110,10 +110,10 @@ NameList: AGL For New Fonts
 DisplaySize: -48
 AntiAlias: 1
 FitToEm: 0
-WinInfo: 59840 34 8
+WinInfo: 59772 34 8
 BeginPrivate: 0
 EndPrivate
-BeginChars: 65537 358
+BeginChars: 65537 357
 
 StartChar: .notdef
 Encoding: 65536 -1 0
@@ -5964,7 +5964,7 @@ EndChar
 
 StartChar: hyphen
 Encoding: 45 45 204
-AltUni2: 002014.ffffffff.0 002212.ffffffff.0 002014.ffffffff.0 002212.ffffffff.0
+AltUni2: 002212.ffffffff.0 002014.ffffffff.0 002212.ffffffff.0 002014.ffffffff.0
 Width: 8
 GlyphClass: 1
 Flags: W
@@ -7661,7 +7661,7 @@ EndChar
 
 StartChar: quotedbl
 Encoding: 34 34 267
-AltUni2: 00201c.ffffffff.0 00201d.ffffffff.0 002033.ffffffff.0 00201c.ffffffff.0 00201d.ffffffff.0 002033.ffffffff.0
+AltUni2: 002033.ffffffff.0 00201d.ffffffff.0 00201c.ffffffff.0 002033.ffffffff.0 00201d.ffffffff.0 00201c.ffffffff.0
 Width: 8
 GlyphClass: 1
 Flags: W
@@ -9407,6 +9407,7 @@ SplineSet
  2 0 l 1,3,-1
  4 0 l 1,0,-1
 EndSplineSet
+Validated: 1
 EndChar
 
 StartChar: uniEA01
@@ -9422,6 +9423,7 @@ SplineSet
  2 0 l 1,3,-1
  6 0 l 5,0,-1
 EndSplineSet
+Validated: 1
 EndChar
 
 StartChar: uniEA02
@@ -9437,6 +9439,7 @@ SplineSet
  0 0 l 1,3,-1
  6 0 l 1,0,-1
 EndSplineSet
+Validated: 1
 EndChar
 
 StartChar: uniEA03
@@ -9454,6 +9457,7 @@ SplineSet
  2 0 l 5,5,-1
  4 0 l 1,0,-1
 EndSplineSet
+Validated: 1
 EndChar
 
 StartChar: uniEA04
@@ -9469,6 +9473,7 @@ SplineSet
  2 6 l 1,3,-1
  4 6 l 1,0,-1
 EndSplineSet
+Validated: 1
 EndChar
 
 StartChar: uniEA05
@@ -9486,6 +9491,7 @@ SplineSet
  4 4 l 5,5,-1
  4 0 l 5,0,-1
 EndSplineSet
+Validated: 1
 EndChar
 
 StartChar: uniEA06
@@ -9501,6 +9507,7 @@ SplineSet
  2 2 l 1,3,-1
  6 2 l 1,0,-1
 EndSplineSet
+Validated: 1
 EndChar
 
 StartChar: uniEA07
@@ -9520,6 +9527,7 @@ SplineSet
  0 2 l 1,7,-1
  4 2 l 1,0,-1
 EndSplineSet
+Validated: 1
 EndChar
 
 StartChar: uniEA08
@@ -9539,6 +9547,7 @@ SplineSet
  2 0 l 5,7,-1
  0 0 l 5,0,-1
 EndSplineSet
+Validated: 1
 EndChar
 
 StartChar: uniEA09
@@ -9565,6 +9574,7 @@ SplineSet
     0 0 z
   EndSpiro
 EndSplineSet
+Validated: 1
 EndChar
 
 StartChar: uniEA0A
@@ -9573,30 +9583,22 @@ Width: 8
 Flags: W
 LayerCount: 2
 Fore
-Refer: 127 126 N 1 0 0 1 0 -4 2
-EndChar
-
-StartChar: uniEA0A
-Encoding: 59914 59914 339
-Width: 8
-Flags: W
-LayerCount: 2
-Fore
 SplineSet
-6 2 m 5,0,-1
- 6 0 l 5,1,-1
- 4 0 l 5,2,-1
- 4 -2 l 5,3,-1
- 0 -2 l 5,4,-1
- 0 0 l 5,5,-1
- 2 0 l 5,6,-1
- 2 2 l 5,7,-1
- 6 2 l 5,0,-1
+2 2 m 29,0,-1
+ 6 2 l 29,1,-1
+ 6 0 l 29,2,-1
+ 4 0 l 29,3,-1
+ 4 -2 l 29,4,-1
+ 0 -2 l 29,5,-1
+ 0 0 l 29,6,-1
+ 2 0 l 29,7,-1
+ 2 2 l 29,0,-1
 EndSplineSet
+Validated: 6291457
 EndChar
 
 StartChar: uniEA0B
-Encoding: 59915 59915 340
+Encoding: 59915 59915 339
 Width: 8
 Flags: W
 LayerCount: 2
@@ -9608,10 +9610,11 @@ SplineSet
  4 8 l 25,3,-1
  6 8 l 25,0,-1
 EndSplineSet
+Validated: 1
 EndChar
 
 StartChar: uniEA0C
-Encoding: 59916 59916 341
+Encoding: 59916 59916 340
 Width: 8
 LayerCount: 2
 Fore
@@ -9624,10 +9627,11 @@ SplineSet
  2 -2 l 25,5,-1
  2 6 l 25,0,-1
 EndSplineSet
+Validated: 1
 EndChar
 
 StartChar: uniEA0D
-Encoding: 59917 59917 342
+Encoding: 59917 59917 341
 Width: 8
 LayerCount: 2
 Fore
@@ -9642,10 +9646,11 @@ SplineSet
  6 6 l 29,7,-1
  6 -2 l 29,0,-1
 EndSplineSet
+Validated: 1
 EndChar
 
 StartChar: uniEA0E
-Encoding: 59918 59918 343
+Encoding: 59918 59918 342
 Width: 8
 Flags: W
 LayerCount: 2
@@ -9661,10 +9666,11 @@ SplineSet
  4 -2 l 29,7,-1
  2 -2 l 29,0,-1
 EndSplineSet
+Validated: 1
 EndChar
 
 StartChar: uniEA0F
-Encoding: 59919 59919 344
+Encoding: 59919 59919 343
 Width: 8
 Flags: W
 LayerCount: 2
@@ -9678,10 +9684,11 @@ SplineSet
  4 6 l 25,5,-1
  6 6 l 25,0,-1
 EndSplineSet
+Validated: 1
 EndChar
 
 StartChar: uniEA10
-Encoding: 59920 59920 345
+Encoding: 59920 59920 344
 Width: 8
 Flags: W
 LayerCount: 2
@@ -9697,10 +9704,11 @@ SplineSet
  2 0 l 29,7,-1
  2 6 l 29,0,-1
 EndSplineSet
+Validated: 1
 EndChar
 
 StartChar: uniEA11
-Encoding: 59921 59921 346
+Encoding: 59921 59921 345
 Width: 8
 LayerCount: 2
 Fore
@@ -9713,10 +9721,11 @@ SplineSet
  4 0 l 29,5,-1
  4 4 l 29,0,-1
 EndSplineSet
+Validated: 1
 EndChar
 
 StartChar: uniEA12
-Encoding: 59922 59922 347
+Encoding: 59922 59922 346
 Width: 8
 Flags: W
 LayerCount: 2
@@ -9732,10 +9741,11 @@ SplineSet
  2 2 l 5,7,-1
  0 2 l 5,0,-1
 EndSplineSet
+Validated: 1
 EndChar
 
 StartChar: uniEA13
-Encoding: 59923 59923 348
+Encoding: 59923 59923 347
 Width: 8
 LayerCount: 2
 Fore
@@ -9748,10 +9758,11 @@ SplineSet
  2 0 l 29,5,-1
  2 4 l 29,0,-1
 EndSplineSet
+Validated: 1
 EndChar
 
 StartChar: uniEA14
-Encoding: 59924 59924 349
+Encoding: 59924 59924 348
 Width: 8
 Flags: W
 LayerCount: 2
@@ -9769,10 +9780,11 @@ SplineSet
  0 2 l 25,9,-1
  0 4 l 25,0,-1
 EndSplineSet
+Validated: 1
 EndChar
 
 StartChar: uniEA15
-Encoding: 59925 59925 350
+Encoding: 59925 59925 349
 Width: 8
 LayerCount: 2
 Fore
@@ -9787,10 +9799,11 @@ SplineSet
  0 -2 l 25,7,-1
  0 2 l 29,0,-1
 EndSplineSet
+Validated: 1
 EndChar
 
 StartChar: uniEA16
-Encoding: 59926 59926 351
+Encoding: 59926 59926 350
 Width: 8
 LayerCount: 2
 Fore
@@ -9805,10 +9818,11 @@ SplineSet
  0 2 l 29,7,-1
  0 4 l 29,0,-1
 EndSplineSet
+Validated: 1
 EndChar
 
 StartChar: uniEA17
-Encoding: 59927 59927 352
+Encoding: 59927 59927 351
 Width: 8
 Flags: W
 LayerCount: 2
@@ -9822,10 +9836,11 @@ SplineSet
  2 -2 l 29,5,-1
  2 4 l 29,0,-1
 EndSplineSet
+Validated: 1
 EndChar
 
 StartChar: uniEA18
-Encoding: 59928 59928 353
+Encoding: 59928 59928 352
 Width: 8
 Flags: W
 LayerCount: 2
@@ -9843,10 +9858,11 @@ SplineSet
  0 -2 l 29,9,-1
  0 0 l 29,0,-1
 EndSplineSet
+Validated: 1
 EndChar
 
 StartChar: uniEA19
-Encoding: 59929 59929 354
+Encoding: 59929 59929 353
 Width: 8
 Flags: W
 LayerCount: 2
@@ -9862,10 +9878,11 @@ SplineSet
  4 6 l 29,7,-1
  6 6 l 29,0,-1
 EndSplineSet
+Validated: 1
 EndChar
 
 StartChar: uniEA1A
-Encoding: 59930 59930 355
+Encoding: 59930 59930 354
 Width: 8
 Flags: W
 LayerCount: 2
@@ -9883,10 +9900,11 @@ SplineSet
  2 4 l 25,9,-1
  6 4 l 25,0,-1
 EndSplineSet
+Validated: 1
 EndChar
 
 StartChar: uniEA1B
-Encoding: 59931 59931 356
+Encoding: 59931 59931 355
 Width: 8
 Flags: W
 LayerCount: 2
@@ -9906,10 +9924,11 @@ SplineSet
  2 2 l 29,11,-1
  2 4 l 29,0,-1
 EndSplineSet
+Validated: 1
 EndChar
 
 StartChar: uniEA1C
-Encoding: 59932 59932 357
+Encoding: 59932 59932 356
 Width: 8
 Flags: W
 LayerCount: 2
@@ -9925,6 +9944,7 @@ SplineSet
  2 4 l 29,7,-1
  6 4 l 29,0,-1
 EndSplineSet
+Validated: 1
 EndChar
 EndChars
 EndSplineFont

@@ -185,6 +185,7 @@ export class tileModel{
   isNull:boolean;
   grey:boolean=true;
   firstcolour:colour3=new colour3(0,0,0);
+  whitebased:boolean=false;
   constructor(solidcolour?:colour3|colourpossibility){
     if(!solidcolour){
       this.isNull = true;
@@ -195,7 +196,9 @@ export class tileModel{
     this.firstcolour = SafeColour(solidcolour);
   }
 
-  static tripleRing(outer:colour3,middle?:colour3,inner?:colour3){
+  //ways to create tile models
+
+  /*static tripleRing(outer:colour3,middle?:colour3,inner?:colour3){
     let robot = new tileModel();
 
     const oRect = new filledRectangle(vector2.zero,vector2.one,outer)
@@ -212,6 +215,24 @@ export class tileModel{
     robot.firstcolour = outer;
     return robot
   }
+
+  static doubleringtransparency(outer?:colour3,inner?:colour3,ringwidth=0.25){
+    let robot = new tileModel();
+
+    if(outer){
+      robot.rectangles.push(new filledRectangle(new vector2(0,0),new vector2(1,ringwidth),outer));
+      robot.rectangles.push(new filledRectangle(new vector2(0,1-ringwidth),new vector2(1,ringwidth),outer));
+      robot.rectangles.push(new filledRectangle(new vector2(0,ringwidth),new vector2(ringwidth,1-2*ringwidth),outer));
+      robot.rectangles.push(new filledRectangle(new vector2(1-ringwidth,ringwidth),new vector2(ringwidth,1-2*ringwidth),outer));
+    }
+    if(inner){
+      const iRect = new filledRectangle(vector2.one.mul(ringwidth),vector2.one.mul(1-2*ringwidth),inner)
+      robot.rectangles.push(iRect);
+    }
+    robot.isNull = false
+    robot.firstcolour = outer || inner || new colour3(0,0,0,0);
+    return robot
+  }*/ // not used anymore
 
   static tripleRingTransparency(outer?:colour3,middle?:colour3,inner?:colour3){
     let robot = new tileModel();
@@ -234,24 +255,6 @@ export class tileModel{
     }
     robot.isNull = false
     robot.firstcolour = outer || middle || inner || new colour3(0,0,0,0);
-    return robot
-  }
-
-  static doubleringtransparency(outer?:colour3,inner?:colour3,ringwidth=0.25){
-    let robot = new tileModel();
-
-    if(outer){
-      robot.rectangles.push(new filledRectangle(new vector2(0,0),new vector2(1,ringwidth),outer));
-      robot.rectangles.push(new filledRectangle(new vector2(0,1-ringwidth),new vector2(1,ringwidth),outer));
-      robot.rectangles.push(new filledRectangle(new vector2(0,ringwidth),new vector2(ringwidth,1-2*ringwidth),outer));
-      robot.rectangles.push(new filledRectangle(new vector2(1-ringwidth,ringwidth),new vector2(ringwidth,1-2*ringwidth),outer));
-    }
-    if(inner){
-      const iRect = new filledRectangle(vector2.one.mul(ringwidth),vector2.one.mul(1-2*ringwidth),inner)
-      robot.rectangles.push(iRect);
-    }
-    robot.isNull = false
-    robot.firstcolour = outer || inner || new colour3(0,0,0,0);
     return robot
   }
 
@@ -353,6 +356,73 @@ export class tileModel{
     return robot
   }
 
+  static fromString(picture:string){
+    let robot = new tileModel();
+
+    const rectsmap:number[][] = []
+
+    const rows = picture.split("\n")
+    var calibrate:vector2|undefined;
+    for (let y = 0; y < rows.length; y++) {
+      const row = rows[y];
+      for (let x = 0; x < row.length; x++) {
+        const element = row[x];
+        if(element === "&"){
+          calibrate = new vector2(x,y)
+          continue
+        }
+        if(!calibrate) continue
+        let _colourcode:number|undefined;
+        switch(element){
+          case "0":
+            _colourcode = 0
+            break
+          case "1":
+            _colourcode = 1
+            break
+          case "2":
+            _colourcode = 2
+            break
+          case "3":
+            _colourcode = 3
+            break
+        }
+        if(_colourcode === undefined) continue
+        const i = new vector2(x,y).sub(calibrate).sub(new vector2(2,2))
+        if(!rectsmap[i.y])
+          rectsmap[i.y] = [];
+        rectsmap[i.y][i.x] = _colourcode
+      }
+    }
+
+    console.log(rectsmap)
+
+    const colourbycode = [palette.zro,palette.one,palette.two,palette.tri]
+
+    for (let y = 0; y < rectsmap.length; y++) {
+      const row = rectsmap[y];
+      if(!row) continue
+      let running:number|undefined = row[0];
+      let runstart = 0;
+      for (let x = 1; x < row.length+1; x++) {
+        const i = row[x] as number|undefined;
+        if(i === running)
+          continue
+        if(running !== undefined){
+          robot.drawpixel(colourbycode[running],new vector2(runstart,y),1/6,new vector2(x - runstart,1))
+          robot.firstcolour = colourbycode[running]
+        }
+        running = i
+        runstart = x
+      }
+    }
+
+    console.log(robot)
+
+    robot.isNull = false
+    return robot
+  }
+
   drawpixel(_colour:colour3,pixelcoords:vector2,pixelswidth=1/6,pixelsize=vector2.one){
     this.rectangles.push(new filledRectangle(pixelcoords.mul(pixelswidth),pixelsize.mul(pixelswidth),_colour))
   }
@@ -402,6 +472,12 @@ export class tileModel{
     robot.grey = false
     return robot;
   }
+
+  whiteBased(){
+    const robot = clone(this)
+    robot.whitebased = true
+    return robot;
+  }
 }
 
 export const tileModels = Object.freeze({
@@ -411,26 +487,161 @@ export const tileModels = Object.freeze({
   "garbage2":tileModel.tripleRingTransparency(palette.one,undefined,palette.one),
   "I":tileModel.blocks(palette.two,palette.one,palette.one,palette.one,palette.one),
   "L":tileModel.blocks(palette.two,undefined,palette.one,undefined,undefined),
-  "O":tileModel.blocks(palette.one,palette.one,palette.one,palette.one,undefined),
+  "O":tileModel.blocks(palette.one,palette.one,palette.one,palette.one,undefined).whiteBased(),
   "Z":tileModel.blocks(palette.two,palette.two,palette.two,palette.two,palette.one),
   "T":tileModel.blocks(palette.tri,palette.one,palette.one,palette.one,palette.one),
   "J":tileModel.blocks(palette.tri,undefined,palette.one,undefined,undefined),
   "S":tileModel.blocks(palette.tri,palette.tri,palette.tri,palette.tri,palette.one),
-  "V":tileModel.blocks(palette.one,palette.one,palette.one,palette.one,undefined),
-  "U":tileModel.blocks(palette.one,palette.one,palette.one,palette.one,undefined),
-  "W":tileModel.blocks(palette.one,palette.one,palette.one,palette.one,undefined),
-  "F":tileModel.blocks(palette.tri,palette.tri,palette.tri,palette.tri,palette.one),
-  "K":tileModel.blocks(palette.two,palette.two,palette.two,palette.two,palette.one),
-  "H":tileModel.blocks(palette.two,undefined,palette.one,undefined,undefined),
-  "N":tileModel.blocks(palette.tri,undefined,palette.one,undefined,undefined),
-  "Y":tileModel.blocks(palette.two,undefined,palette.one,undefined,undefined),
-  "R":tileModel.blocks(palette.tri,undefined,palette.one,undefined,undefined),
-  "P":tileModel.blocks(palette.tri,palette.tri,palette.tri,palette.tri,palette.one),
-  "Q":tileModel.blocks(palette.two,palette.two,palette.two,palette.two,palette.one),
-  "grenade":tileModel.tripleRing(colour3.fromHex("#c9552a"),colour3.fromHex("#000000")).doNotGrey(),
-  "bomb":tileModel.tripleRing(colour3.fromHex("#c9552a"),colour3.fromHex("#e5db22")).doNotGrey(),
-  "permanent":new tileModel(colour3.fromHex("#593c63")).doNotGrey(),
-  "impermanent":tileModel.tripleRing(colour3.fromHex("#593c63"),undefined,colour3.fromHex("#adafb8")).doNotGrey(),
+  "V":tileModel.fromString(`
+  &
+    
+    111111
+    111110
+    111111
+    110111
+    111101
+    101111
+    `).whiteBased(),
+  "U":tileModel.fromString(`
+  &
+    
+    111111
+    1111 1
+    111111
+    111111
+    1 1111
+    111111
+    `).whiteBased(),
+  "W":tileModel.fromString(`
+  &
+    
+    111111
+    1    1
+    1 11 1
+    1 11 1
+    1    1
+    111111
+    `).whiteBased(),
+  "F":tileModel.fromString(`
+  &
+    
+    333333
+    311133
+    313333
+    313333
+    333333
+    333333
+    `),
+  "K":tileModel.fromString(`
+  &
+    
+    222222
+    211122
+    212222
+    212222
+    222222
+    222222
+    `),
+  "H":tileModel.fromString(`
+  &
+    
+    122222
+    2 22 2
+    222222
+    222222
+    2 22 2
+    222222
+    `),
+  "N":tileModel.fromString(`
+  &
+    
+    133333
+    3 33 3
+    333333
+    333333
+    3 33 3
+    333333
+    `),
+  "Y":tileModel.fromString(`
+  &
+    
+    112222
+    122222
+    22  22
+    22  12
+    222112
+    222222
+    `),
+  "R":tileModel.fromString(`
+  &
+    
+    113333
+    133333
+    33  33
+    33  13
+    333113
+    333333
+    `),
+  "P":tileModel.fromString(`
+  &
+    
+    133133
+    333333
+    333333
+    133133
+    333333
+    333333
+    `),
+  "Q":tileModel.fromString(`
+  &
+    
+    122122
+    222222
+    222222
+    122122
+    222222
+    222222
+    `),
+  "grenade":tileModel.fromString(`
+  &
+    
+    122222
+    210012
+    210012
+    211112
+    210012
+    222222
+    `).doNotGrey(),
+  "bomb":tileModel.fromString(`
+  &
+    
+    122222
+    201012
+    210012
+    200002
+    211002
+    222222
+    `).doNotGrey(),
+  "permanent":tileModel.fromString(`
+  &
+    
+    111111
+    110101
+    100000
+    110101
+    100000
+    110101
+    `).doNotGrey(),
+  "impermanent":tileModel.fromString(`
+  &
+    
+    111111
+    100000
+    111111
+    100000
+    111111
+    100000
+    `).doNotGrey(),
 });
 
 export const levelsGravities = Object.freeze([
