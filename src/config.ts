@@ -1,10 +1,9 @@
-import { tileModel } from './roms.ts'
 import { clone, formatTime, formatTimeSmall, modular, Randomiser, vector2, weightedRoundoff } from './basics.ts'
 import { board, tile, tileType } from './board.ts';
 import rs, { kickSystems, kickType, simplifyKickType } from './rotationsystems.ts';
 import { game } from './sorkurzdil.ts';
 import { ExplodeGrenades, gimmick, MarkBombClears } from './gimmicks.ts';
-import { tileModels } from './roms.ts';
+import { tileModels, tileModel } from './tilemodels.ts';
 import { BaseGarbageGenerator, LinesGenerator } from './garbagegeneration.ts';
 import { dualGarbageType } from './garbagelinetypes.ts';
 import { BasePieceGenerator } from './piecechoice.ts';
@@ -351,6 +350,12 @@ export enum spinDetection{
     sorkurzdil,
 }
 
+export enum alignYType{
+    top,
+    COR,
+    bottom,
+}
+
 export type roundingType = (x:number)=>number;
 export const roundingTypes:{[key:string]:(x:number)=>number} = Object.freeze({
     rounddown:Math.floor,
@@ -371,7 +376,7 @@ export class gameConfig{
     infinitehold = false;
     discardsize = 0;
 
-    aligntoptile=false;
+    spawnAlignY=alignYType.bottom;
     spawnOffset:vector2=vector2.zero;
 
     forcehandling = false;
@@ -489,7 +494,7 @@ export class gameConfig{
 
     boardscalar = vector2.one;
 
-    lodges = [new vector2(2,0),new vector2(-2,0),new vector2(0,-2),new vector2(1,-1),new vector2(-1,-1)];
+    lodges = [new vector2(1,-1),new vector2(0,-2),new vector2(2,0),new vector2(1,1),new vector2(-2,0),new vector2(0,2)];
 
     debug = false;
 

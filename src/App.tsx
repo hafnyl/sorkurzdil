@@ -4,8 +4,8 @@ import { palette } from './roms.ts';
 import { game, gameManager } from './sorkurzdil.ts'
 import GameRenderer, {rendering} from './rendering.tsx';
 import React, { useRef, useEffect, RefObject, KeyboardEvent, useState, Component, ReactElement } from 'react';
-import { gameConfig, userConfig, Command, difficultlinecleartype, garbagePacket, wavetype, missions, keybinds } from './config.ts';
-import { colour3 } from './basics.ts';
+import { gameConfig, userConfig, Command, difficultlinecleartype, garbagePacket, wavetype, missions, keybinds, scorers } from './config.ts';
+import { colour3, vector2 } from './basics.ts';
 import InputManager from './inputmanager.ts';
 import configs from './configprefabs.ts'
 import { kickSystems } from './rotationsystems.ts';
@@ -15,6 +15,7 @@ import { LinesGenerator, SpecklesGarbage } from './garbagegeneration.ts';
 import { AdhereToGlue } from './gimmicks.ts';
 import { Damnation, NwideGarbage, OneBlockGarbage, StraightGarbage } from './garbagelinetypes.ts';
 import { BasePieceGenerator, Fool } from './piecechoice.ts';
+import { tileModels } from './tilemodels.ts';
 
 const FPS = 120;
 
@@ -30,12 +31,21 @@ _gameConfig.debug = true;
 
 //_gameConfig.Splice(configs.bombs)
 
+//_gameConfig.Splice(configs.sprint40)
+//_gameConfig.mission = missions.attack(100)
+//_gameConfig.mission = missions.lines(10)
+//_gameConfig.scorer = scorers.speed;
 //_gameConfig.kickSystem = kickSystems.lazyrs
-//_gameConfig.pieceChoice = new Fool(bagprefabs.tetrominos,[pieces.krux],28,1)
-_gameConfig.pieceChoice = new BasePieceGenerator(bagprefabs.pentominos.concat(bagprefabs.m123).concat(bagprefabs.freeTetrominos))
+//_gameConfig.pieceChoice = new Fool(bagprefabs.tetrominos,bagprefabs.fool10.concat(bagprefabs.fool9))
+//_gameConfig.pieceChoice = new BasePieceGenerator(bagprefabs.pentominos.concat(bagprefabs.m123).concat(bagprefabs.freeTetrominos))
+//_gameConfig.pieceChoice = new BasePieceGenerator(bagprefabs.pentominos)
 //_gameConfig.pieceChoice = new BasePieceGenerator(bagprefabs.m123)
+_gameConfig.pieceChoice = new BasePieceGenerator(bagprefabs.tetraplets)
 
 //_gameConfig.Splice(configs.m123)
+
+//_gameConfig.width = 3
+//_gameConfig.height = 6
 
 _userConfig.boardGreying = false
 

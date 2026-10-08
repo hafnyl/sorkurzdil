@@ -120,14 +120,25 @@ export class gameManager{
 
         this.pieceChoice = clone(_gameConfig.pieceChoice);
         this.pieceChoice.Seed(seed)
-        this.board.activepiece = this.PopQueue();
+        this.pieceChoice.Cull(_gameConfig.width)
+
+        this.movementManager = new MovementManager(this.game,this.board);
+
+        const tospawn = this.PopQueue()
+        if(!tospawn)
+            throw new Error("no pieces")
+        const spawnslR = this.movementManager.SpawnLocation(tospawn)
+        this.board.activepiece = spawnslR.piece;
+        this.board.activeposition = spawnslR.position;
+        if(spawnslR.dies)
+            throw new Error("you get an achievement for finding this error")
+
 
         this.waveelapsed = _gameConfig.waveinterval;
 
         this.gameDelay = _userConfig.gameStartDelay;
 
 
-        this.movementManager = new MovementManager(this.game,this.board);
 
         for(const i of _gameConfig.initialisegarbage)
             this.garbageQueue.push(clone(i));
@@ -589,12 +600,19 @@ export class gameManager{
 
     PlacementCouldKill(shift=vector2.zero){
         if(!this.board.activepiece) return false
-        for (const offi of this.board.activepiece.tileoffsets){
-            const i = this.board.activeposition.add(offi).add(shift)
-            for (const offj of this.queue[0]?.tileoffsets){
-                const j = this.board.piecespawnlocation.add(offj)
-                if(i.eqeqeq(j))
-                    return true
+        const nextpiece = this.queue[0]
+        if(!nextpiece) return false
+        const slR = this.movementManager.SpawnLocation(nextpiece)
+        if(slR.dies)
+            return true
+        for (const offj of slR.piece.tileoffsets){
+            const j = slR.position.add(offj)
+            if(!this.board.matrix.IsValid(j))
+                return true
+            for (const offi of this.board.activepiece.tileoffsets){
+                const i = this.board.activeposition.add(offi).add(shift)
+            if(i.eqeqeq(j))
+                return true
             }
         }
         return false;
@@ -614,7 +632,7 @@ export class gameManager{
             this.garbageswitch = !this.garbageswitch
         }
         this.garbageGeneration.Write(this.board,this.game.gameConfig.garbageType,numberlines)
-        while(this.board.activepiece && !this.movementManager.ValidShift(vector2.zero))
+        while(this.board.activepiece && !this.movementManager.ValidShift(vector2.zero,this.board.activepiece,this.board.activeposition))
             this.board.activeposition = this.board.activeposition.add(vector2.up)
     }
 
@@ -667,8 +685,10 @@ export class gameManager{
     }
 
     WriteWoundToBoard(numberlines:number){
-        var upshift = Math.max(0,numberlines - (-this.movementManager.DropHeight().y))
-        this.board.activeposition = this.board.activeposition.add(vector2.up.mul(upshift));
+        if(this.board.activepiece){
+            var upshift = Math.max(0,numberlines - (-this.movementManager.DropHeight(vector2.down,this.board.activepiece,this.board.activeposition).y))
+            this.board.activeposition = this.board.activeposition.add(vector2.up.mul(upshift));
+        }
 
         this.woundGeneration.Write(this.board,()=>{
             const _tile = this.game.gameConfig.woundsType(this.garbageswitch)
@@ -786,6 +806,7 @@ export class gameManager{
             const alive = i(this.game)
             if(!alive){
                 this.game.gameOver = true;
+                this.board.matrix.Die();
                 return
             }
         }

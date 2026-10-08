@@ -1,8 +1,8 @@
-import { Randomiser, vector2 } from "./basics";
-import { board, tile, tileType } from "./board";
-import { BaseGarbageLineGenerator, dualGarbageType } from "./garbagelinetypes";
-import { BasePieceGenerator } from "./piecechoice";
-import { tileModels } from "./roms";
+import { Randomiser, vector2 } from "./basics.ts";
+import { board, tile, tileType } from "./board.ts";
+import { BaseGarbageLineGenerator, dualGarbageType } from "./garbagelinetypes.ts";
+import { BasePieceGenerator } from "./piecechoice.ts";
+import { tileModels } from "./tilemodels.ts";
 
 export class BaseGarbageGenerator{
     altskin:boolean=false;

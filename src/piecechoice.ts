@@ -1,7 +1,7 @@
-import { clone, Randomiser } from "./basics";
-import { tileType } from "./board";
-import { piece } from "./pieces";
-import { tileModels } from "./roms";
+import { clone, Randomiser } from "./basics.ts";
+import { tileType } from "./board.ts";
+import { piece } from "./pieces.ts";
+import { tileModels } from "./tilemodels.ts";
 
 function HashBag(bagprefab:piece[]){
     var o = "";
@@ -29,6 +29,16 @@ export class BasePieceGenerator{
 
     Seed(seed:number){
         this.randomiser = new Randomiser(seed);
+    }
+
+    Cull(maxbounds:number){
+        const rawbag = this.bagprefab
+        this.bagprefab = []
+        for(const i of rawbag){
+            const bounds = i.bounds
+            if(bounds.x <= maxbounds || bounds.y <= maxbounds)
+                this.bagprefab.push(i)
+        }
     }
 
     Reset(){

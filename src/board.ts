@@ -1,6 +1,5 @@
-import { tileModel } from './roms.ts'
 import { colour3, vector2 } from './basics.ts'
-import { tileModels } from './roms.ts';
+import { tileModels, tileModel } from './tilemodels.ts';
 import { piece } from './pieces.ts';
 
 export enum tileType{
@@ -394,18 +393,28 @@ export class matrix{
             tile.tileModel = tileModels.garbage
         }
     }
+
+    Die(){
+        const nonempties = this.GetNonNullPositions()
+        for(const i of nonempties){
+            const tile = this.GetTile(i)
+            if(!tile) continue
+            if(Math.random() > 1/3) continue
+            this.DeleteTile(i)
+        }
+    }
 }
 
 export class board{
     matrix:matrix;
     activepiece:piece|undefined;
     activeposition:vector2;
-    piecespawnlocation:vector2;
+    spawnlocation:vector2;
     yoffset:number=0;
 
     constructor(_matrix:matrix,piecespawnlocation:vector2){
         this.matrix = _matrix;
-        this.piecespawnlocation = piecespawnlocation
+        this.spawnlocation = piecespawnlocation
         this.activeposition = piecespawnlocation;
     }
 }

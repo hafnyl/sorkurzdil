@@ -1,6 +1,6 @@
 import { vector2 } from "./basics.ts";
 import { tile } from "./board.ts";
-import { difficultlinecleartype, gameConfig, garbagePacket, wavetype } from "./config.ts"
+import { alignYType, difficultlinecleartype, gameConfig, garbagePacket, wavetype } from "./config.ts"
 import { bagprefabs } from "./pieces.ts";
 import { kickSystems } from "./rotationsystems.ts";
 import { constraints, missions, scorers } from "./config.ts";
@@ -30,7 +30,7 @@ export default class configprefabs{
         _gameConfig.queuesize = 1;
         _gameConfig.holdsize = 0;
         _gameConfig.drawGhost = false;
-        _gameConfig.aligntoptile = true;
+        _gameConfig.spawnAlignY = alignYType.top;
         _gameConfig.spawnOffset = new vector2(0,-1);
         _gameConfig.droughteligible = true;
 

@@ -1,6 +1,6 @@
-import { Randomiser } from "./basics";
-import { tile, tileType } from "./board";
-import { tileModels } from "./roms";
+import { Randomiser } from "./basics.ts";
+import { tile, tileType } from "./board.ts";
+import { tileModels } from "./tilemodels.ts";
 
 export type dualGarbageType = (alt:boolean)=>tile;
 

@@ -1,4 +1,4 @@
-import { palette, colourpossibility, SafeColour, tileModel, clearNames } from './roms.ts'
+import { palette, clearNames } from './roms.ts'
 import { colour3, formatTime, modular, vector2 } from './basics.ts'
 import MatrixRendering from './matrixrendering.tsx';
 import gameFlags, { lineclearalert } from './flags.ts';
@@ -8,6 +8,7 @@ import { scoreDisplay, scoreDisplays, scoreDisplayType } from './config.ts';
 import particleManager, { curve, rectParticle, textParticle } from './particlemanager.tsx';
 import React, { createElement, ReactElement, RefObject, useImperativeHandle, useRef, useState } from 'react';
 import { piece } from './pieces.ts';
+import { colourpossibility, SafeColour, tileModel } from './tilemodels.ts';
 
 function FDecay(x:number){
     return 1 - Math.exp(-x/32);
@@ -20,6 +21,8 @@ function lerp(a:number,b:number,t:number){
 function flipy(x:vector2){
     return new vector2(x.x,-x.y);
 }
+
+const dither2 = tileModel.dither2()
 
 export class rendering {
     cameraYoffset = 0;
@@ -94,7 +97,7 @@ export class rendering {
             compensatezoom = 4 / length
         }
 
-        var compensateoffset = new vector2(0,Math.floor(Math.min(-piece.extends[1].y,2)-0.5)+1);
+        var compensateoffset = new vector2(0,Math.floor(Math.min(-piece.boundingrectangle[1].y,2)-0.5)+1);
         if(bounds.x%2==0)
             compensateoffset = compensateoffset.add(new vector2(-0.5,0))
 
@@ -110,7 +113,7 @@ export class rendering {
             const queuePiece = this.gameManager.queue[i];
             var useModel = queuePiece.tileModel;
             if(this.game.gameOver)
-                useModel = useModel.coloured(palette.one);
+                useModel = useModel.coloured(palette.one).intersection(dither2);
 
             this.DrawPieceCompensate(queuePiece,
                 topright.add(this.FSTL2(new vector2(3 + i * 4.5,1))),
@@ -128,7 +131,7 @@ export class rendering {
             const queuePiece = this.gameManager.hold[i];
             var useModel = queuePiece.tileModel;
             if((this.gameManager.holdsused >= this.game.gameConfig.holds && !this.game.gameConfig.infinitehold) || this.game.gameOver)
-                useModel = useModel.coloured(palette.one);
+                useModel = useModel.coloured(palette.one).intersection(dither2);
             
             this.DrawPieceCompensate(queuePiece,
             topleft.add(this.FSTL2(new vector2(-3 - i * 4.5,1))),
@@ -312,7 +315,7 @@ export class rendering {
                 opacity:0,
                 animation: lifespan.toString() + "s ease-out myAnimation" + animation,
                 fontWeight: bold ? "bold" : "normal",
-            },onAnimationEnd:()=>{
+            },className:"dynamic",onAnimationEnd:()=>{
                 this.setDynamicText(this.dynamicText.map(e=>{
                     if(e === ee) return null; return e
                 }))

@@ -1,4 +1,4 @@
-import { palette, tileModel } from './roms.ts'
+import { palette } from './roms.ts'
 import { colour3, modular, vector2 } from './basics.ts'
 import { game, gameManager } from './sorkurzdil.ts';
 import gameFlags from './flags.ts';
@@ -6,9 +6,10 @@ import { board, matrix, tile } from './board.ts';
 import { simpleKickType, simplifyKickType } from './rotationsystems.ts';
 import { cameraMode } from './config.ts';
 import { CORoffsets, piece } from './pieces.ts'
+import { tileModel } from './tilemodels.ts';
+import { movementReport } from './movementmanager.ts';
 
-var imagesCache:{[key:string]:HTMLImageElement} = {};
-var loading:{[key:string]:boolean} = {};
+const dither2 = tileModel.dither2()
 
 function FDecay(x:number){
     return 1 - Math.exp(-x/32);
@@ -185,7 +186,7 @@ export default class MatrixRendering {
         var _tileModel = _tile.tileModel;
 
         if(this.game.gameOver){
-            this.DrawSquare(_tileModel.coloured(palette.one),screenpos,this.matrixzoom,bypassboardoffset);
+            this.DrawSquare(_tileModel.coloured(palette.one).intersection(dither2),screenpos,this.matrixzoom,bypassboardoffset);
             return
         }
 
@@ -220,7 +221,7 @@ export default class MatrixRendering {
         var danger = this.board.matrix.GetEffectiveHeight() - this.board.matrix.height + Math.max(activebounds.x,activebounds.y) + Math.floor(Math.max(nextbounds.y,holdbounds.y)/2-0.5) + 1
         var dangercolour = palette.two.toHex()
 
-        if(this.gameManager.PlacementCouldKill(this.gameManager.movementManager.DropHeight())){
+        if(this.board.activepiece && this.gameManager.PlacementCouldKill(this.gameManager.movementManager.DropHeight(vector2.down,this.board.activepiece,this.board.activeposition))){
             dangercolour = palette.tri.toHex()
             danger *= 3
         }
@@ -238,7 +239,7 @@ export default class MatrixRendering {
             var [danger,dangercolour] = this.Danger();
 
             if(danger > 0){
-                this.ctx.fillStyle = Math.sin(Date.now() / 1000 * 3 * danger) > 0 ? dangercolour : palette.zro.toHex()
+                this.ctx.fillStyle = Math.sin(Date.now() / 1000 * (24 + danger)) > 0 ? dangercolour : palette.zro.toHex()
             }
         }
 
@@ -341,7 +342,7 @@ export default class MatrixRendering {
 
     DrawGhost(){
         if(!this.board.activepiece) return;
-        let landpos =this.board.activeposition.add(this.gameManager.movementManager.DropHeight());
+        let landpos =this.board.activeposition.add(this.gameManager.movementManager.DropHeight(vector2.down,this.board.activepiece,this.board.activeposition));
         let ghostModel = this.board.activepiece.tileModel.withOpacity(this.game.userConfig.ghostOpacity);
         this.DrawPiece(this.board.activepiece,
             this.CoordsToScreenPos(landpos),
@@ -358,12 +359,17 @@ export default class MatrixRendering {
         const usepos = this.ActivePieceDrawnPosition();
 
         let pieceModel = this.board.activepiece.tileModel;
-        pieceModel = pieceModel.colourOperation(colour3.saturate,0.4);
+        if(!this.game.gameOver){
+            pieceModel = pieceModel.colourOperation(colour3.saturate,0.4);
 
-        let lockTime = this.game.gameConfig.gravity
-        if(this.game.gameConfig.useLockTime)
-            lockTime = this.game.gameConfig.lockTime
-        pieceModel = pieceModel.lerp(palette.zro,this.gameManager.movementManager.lockelapsed/lockTime * 0.8);
+            let lockTime = this.game.gameConfig.gravity
+            if(this.game.gameConfig.useLockTime)
+                lockTime = this.game.gameConfig.lockTime
+            pieceModel = pieceModel.lerp(palette.zro,this.gameManager.movementManager.lockelapsed/lockTime * 0.8);
+        }
+        else{
+            pieceModel = pieceModel.coloured(palette.one)
+        }
 
         let screenpos = this.CoordsToScreenPos(usepos)
         this.DrawPiece(this.board.activepiece,
@@ -372,48 +378,32 @@ export default class MatrixRendering {
             true,this.matrixzoom,false
         );
     }
+    
+    nextholdslR:movementReport|undefined
+    nextpieceslR:movementReport|undefined
+
+    UpdateHazards(){
+        const nextpiece = this.gameManager.queue[0];
+        if(nextpiece)
+            this.nextpieceslR = this.gameManager.movementManager.SpawnLocation(nextpiece,false);
+        const nexthold = this.gameManager.hold[0];
+        if(nexthold)
+            this.nextholdslR = this.gameManager.movementManager.SpawnLocation(nexthold,true);
+    }
 
     DrawHazards(){
-        const nextpiece = this.gameManager.queue[0];
-        const nexthold = this.gameManager.hold[0];
-
-        /*if(nexthold){
-            this.DrawPiece(nextpiece.subtract(nexthold),
-                this.CoordsToScreenPos(this.board.piecespawnlocation),
-                tileModel.cross(palette.tri),
-                false,true,false
-            );
-
-            this.DrawPiece(nexthold.subtract(nextpiece),
-                this.CoordsToScreenPos(this.board.piecespawnlocation),
-                tileModel.cross(palette.two),
-                false,true,false
-            );
-
-            this.DrawPiece(nexthold.intersection(nextpiece),
-                this.CoordsToScreenPos(this.board.piecespawnlocation),
-                tileModel.cross(palette.one),
-                false,true,false
-            );
-        }else{
-            this.DrawPiece(nextpiece,
-                this.CoordsToScreenPos(this.board.piecespawnlocation),
-                tileModel.cross(palette.tri),
-                false,true,false
-            );
-        }*/
-        if(nexthold){
-            this.DrawPiece(nexthold,
-                this.CoordsToScreenPos(this.board.piecespawnlocation),
+        if(this.nextholdslR)
+            this.DrawPiece(this.nextholdslR.piece,
+                this.CoordsToScreenPos(this.nextholdslR.position),
                 tileModel.dither3alt(palette.two),
                 false,this.matrixzoom,false
             );
-        }
-        this.DrawPiece(nextpiece,
-            this.CoordsToScreenPos(this.board.piecespawnlocation),
-            tileModel.dither2(palette.tri),
-            false,this.matrixzoom,false
-        );
+        if(this.nextpieceslR)
+            this.DrawPiece(this.nextpieceslR.piece,
+                this.CoordsToScreenPos(this.nextpieceslR.position),
+                tileModel.dither2(palette.tri),
+                false,this.matrixzoom,false
+            );
         
     }
 
@@ -536,12 +526,12 @@ export default class MatrixRendering {
         this.DrawHealth();
         this.DrawGarbageQueue();
         
-        if(this.game.gameConfig.drawGhost)
+        if(!this.game.gameOver && this.game.gameConfig.drawGhost)
             this.DrawGhost();
 
         this.DrawActivePiece();
 
-        if(this.Danger()[0] > 0)
+        if(!this.game.gameOver && this.Danger()[0] > 0)
             this.DrawHazards();
     }
 
@@ -569,8 +559,8 @@ export default class MatrixRendering {
                 case cameraMode.focusActive:{
                     if(!this.board.activepiece) break
                     let trackpos = this.ActivePieceDrawnPosition();
-                    let top = Math.max(trackpos.y - this.board.piecespawnlocation.y / 2,0);
-                    let bottom = trackpos.y - this.board.piecespawnlocation.y - 1;
+                    let top = Math.max(trackpos.y - this.board.spawnlocation.y / 2,0);
+                    let bottom = trackpos.y - this.board.spawnlocation.y - 1;
                     if(this.cameraYtarget > top)
                         this.cameraYtarget = top;
                     if(this.cameraYtarget < bottom)
@@ -579,9 +569,10 @@ export default class MatrixRendering {
                     break
                 }
                 case cameraMode.focusGhost:{
-                    let trackpos = this.board.activeposition.add(this.gameManager.movementManager.DropHeight());
+                    if(!this.board.activepiece) break
+                    let trackpos = this.board.activeposition.add(this.gameManager.movementManager.DropHeight(vector2.down,this.board.activepiece,this.board.activeposition));
                     let top = trackpos.y;
-                    let bottom = Math.max(trackpos.y - this.board.piecespawnlocation.y / 2,0);
+                    let bottom = Math.max(trackpos.y - this.board.spawnlocation.y / 2,0);
                     if(this.cameraYtarget > top)
                         this.cameraYtarget = top;
                     if(this.cameraYtarget < bottom)
@@ -619,8 +610,6 @@ export default class MatrixRendering {
                     this.matrixangle +=  rotation * this.rotatefactor;
                 }
                 this.latePiece = this.board.activepiece
-                this.flags.piecechange = false;
-                this.flags.justspinned = false;
             }
 
             //receive
@@ -659,6 +648,10 @@ export default class MatrixRendering {
     RenderStep(deltaTime:number){
         const centerX = this.canvas.width/2, centerY = this.canvas.height/2;
         this.origin = new vector2(centerX,centerY);
+
+        if(this.flags.piecechange)
+            this.UpdateHazards()
+        
         
         this.ctx.reset();
 
@@ -672,6 +665,9 @@ export default class MatrixRendering {
         this.cullline = this.drawnMatrix().y / 2
 
         this.DrawBoard()
+
+        this.flags.piecechange = false;
+        this.flags.justspinned = false;
     }
 
     constructor(_gameManager:gameManager,canvas:HTMLCanvasElement){

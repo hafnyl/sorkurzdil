@@ -1,8 +1,9 @@
 import { clone, colour3, modular, vector2 } from "./basics";
 import { tile, tileType } from "./board";
 import { images } from "./imagemanager";
-import { palette, tileModel, tileModels } from "./roms";
+import { palette } from "./roms";
 import { kickType, simpleKickType, SpinType, symmetry } from "./rotationsystems";
+import { tileModel, tileModels } from "./tilemodels";
 
 export enum orientiation {
   north,
@@ -20,6 +21,7 @@ export const CORoffsets = {
 
 export class piece{
   name:string;
+  id:string;
 
   tileoffsets:vector2[];
   tileModel:tileModel;
@@ -49,7 +51,8 @@ export class piece{
 
   tileType=tileType.none;
 
-  constructor(tileoffsets:vector2[],tileModel:tileModel,kickType:kickType,name:string,spinType:SpinType=SpinType.immobilespin){
+  constructor(id:string,tileoffsets:vector2[],tileModel:tileModel,kickType:kickType,name:string=id,spinType:SpinType=SpinType.immobilespin){
+    this.id = id;
     this.tileoffsets = tileoffsets;
     this.tileModel = tileModel;
     this.ikickType = kickType;
@@ -153,15 +156,17 @@ export class piece{
   }
 
   //things to use when hardcoding pieces
+  /**current size of the bounding rectangle of the piece */
   get bounds(){
-    var [northeast,southwest] = this.extends
+    var [northeast,southwest] = this.boundingrectangle
 
     const _bounds = northeast.sub(southwest).add(vector2.one)
     
     return _bounds
   }
 
-  get extends(){
+  /**northeast and southwest points of the bounding rectangle of the piece relative to the center of rotation*/
+  get boundingrectangle(){
     var northeast = this.tileoffsets[0]
     var southwest = this.tileoffsets[0]
 
@@ -172,8 +177,8 @@ export class piece{
     return [northeast,southwest]
   }
 
-  static fromString(tilepicture:string,tileModel:tileModel,name:string,_kickType=kickType.auto){
-    const robot = new piece([],tileModel,_kickType,name,SpinType.immobilespin)
+  static fromString(id:string,tilepicture:string,tileModel:tileModel,name:string=id,_kickType=kickType.auto){
+    const robot = new piece(id,[],tileModel,_kickType,name,SpinType.immobilespin)
 
     const rows = tilepicture.split("\n")
     for (let y = 0; y < rows.length; y++) {
@@ -185,7 +190,7 @@ export class piece{
       }
     }
 
-    const [northeast, southwest] = robot.extends
+    const [northeast, southwest] = robot.boundingrectangle
 
     const origin = new vector2(Math.floor((northeast.x + southwest.x)/2),Math.floor((northeast.y + southwest.y)/2))
     for (let i = 0; i < robot.tileoffsets.length; i++) {
@@ -242,7 +247,7 @@ export class piece{
 export const pieces = Object.freeze({
   // main tetrominos
   I:
-  new piece([
+  new piece("i4",[
     new vector2(-1,0),
     new vector2(0,0),
     new vector2(1,0),
@@ -254,7 +259,7 @@ export const pieces = Object.freeze({
   SpinType.I),
 
   L:
-  new piece([
+  new piece("l4",[
     new vector2(-1,0),
     new vector2(0,0),
     new vector2(1,0),
@@ -266,7 +271,7 @@ export const pieces = Object.freeze({
   SpinType.T),
 
   O:
-  new piece([
+  new piece("o4",[
     new vector2(0,0),
     new vector2(0,1),
     new vector2(1,0),
@@ -278,7 +283,7 @@ export const pieces = Object.freeze({
   SpinType.none).lodgeable(),
 
   Z:
-  new piece([
+  new piece("z4",[
     new vector2(-1,1),
     new vector2(0,0),
     new vector2(1,0),
@@ -290,7 +295,7 @@ export const pieces = Object.freeze({
   SpinType.S),
 
   T:
-  new piece([
+  new piece("t4",[
     new vector2(-1,0),
     new vector2(0,0),
     new vector2(1,0),
@@ -302,7 +307,7 @@ export const pieces = Object.freeze({
   SpinType.T),
 
   J:
-  new piece([
+  new piece("j4",[
     new vector2(-1,0),
     new vector2(0,0),
     new vector2(1,0),
@@ -314,7 +319,7 @@ export const pieces = Object.freeze({
   SpinType.T),
 
   S:
-  new piece([
+  new piece("s4",[
     new vector2(-1,0),
     new vector2(0,0),
     new vector2(1,1),
@@ -327,7 +332,7 @@ export const pieces = Object.freeze({
   
   //modified tetrominoes
   sz:
-  new piece([
+  new piece("s4f",[
     new vector2(-1,0),
     new vector2(0,0),
     new vector2(1,1),
@@ -347,7 +352,7 @@ export const pieces = Object.freeze({
   "s",
   SpinType.S),
   jl:
-  new piece([
+  new piece("l4f",[
     new vector2(-1,0),
     new vector2(0,0),
     new vector2(1,0),
@@ -368,89 +373,89 @@ export const pieces = Object.freeze({
   SpinType.T),
 
   //main pentominoes
-  I5:piece.fromString(`
+  I5:piece.fromString("i5",`
     #####
     `,tileModels.I,"",kickType.I5),
-  V:piece.fromString(`
+  V:piece.fromString("v5",`
       #
       #
     ###
     `,tileModels.V,"",kickType.V).shifted(vector2.up),
-  T5:piece.fromString(`
+  T5:piece.fromString("t5",`
      #
      #
     ###
     `,tileModels.O,"",kickType.T5),
-  U:piece.fromString(`
+  U:piece.fromString("u5",`
     # #
     ###
     `,tileModels.U,"",kickType.U),
-  W:piece.fromString(`
+  W:piece.fromString("w5",`
     #
     ##
      ##
     `,tileModels.W,"",kickType.W),
-  X:piece.fromString(`
+  X:piece.fromString("x5",`
      #
     ###
      #
     `,tileModels.T,"",kickType.X).lodgeable(),
-  J5:piece.fromString(`
+  J5:piece.fromString("j5",`
     #
     ####
     `,tileModels.J,"",kickType.J5),
-  L5:piece.fromString(`
+  L5:piece.fromString("l5",`
        #
     ####
     `,tileModels.L,"",kickType.L5),
-  H:piece.fromString(`
+  H:piece.fromString("h5",`
       ##
     ###
     `,tileModels.H,"",kickType.H),
-  N:piece.fromString(`
+  N:piece.fromString("n5",`
     ##
      ###
     `,tileModels.N,"",kickType.N),
-  Y:piece.fromString(`
+  Y:piece.fromString("y5",`
       #
     ####
     `,tileModels.Y,"",kickType.Y),
-  R:piece.fromString(`
+  R:piece.fromString("r5",`
      #
     ####
     `,tileModels.R,"",kickType.R),
-  P:piece.fromString(`
+  P:piece.fromString("p5",`
     33
     333
     `,tileModels.P,"",kickType.P),
-  Q:piece.fromString(`
+  Q:piece.fromString("q5",`
      33
     333
     `,tileModels.Q,"",kickType.Q),
-  F:piece.fromString(`
+  F:piece.fromString("f5",`
     3
     333
      3
     `,tileModels.F,"",kickType.F),
-  K:piece.fromString(`
+  K:piece.fromString("k5",`
       3
     333
      3
     `,tileModels.K,"",kickType.K),
-  Z5:piece.fromString(`
+  Z5:piece.fromString("z5",`
     33
      3
      33
     `,tileModels.Z,"",kickType.Z5),
-  S5:piece.fromString(`
+  S5:piece.fromString("s5",`
      33
      3
     33
     `,tileModels.S,"",kickType.S5),
   
   //123 minos
-  "l3":
-  new piece([
+  C:
+  new piece("c3",[
     new vector2(0,0),
     new vector2(1,0),
     new vector2(0,1),
@@ -465,11 +470,11 @@ export const pieces = Object.freeze({
     122222
     102220
     `),
-  kickType.T,
+  kickType.special,
   "",
   SpinType.immobilespin),
-  "i3":
-  new piece([
+  "I3":
+  new piece("i3",[
     new vector2(-1,0),
     new vector2(0,0),
     new vector2(1,0),
@@ -484,11 +489,11 @@ export const pieces = Object.freeze({
     133333
     103330
     `),
-  kickType.T,
+  kickType.special,
   "",
   SpinType.immobilespin),
-  "i2":
-  new piece([
+  I2:
+  new piece("i2",[
     new vector2(0,0),
     new vector2(1,0),
   ],
@@ -502,11 +507,11 @@ export const pieces = Object.freeze({
     100000
     120000
     `),
-  kickType.T,
+  kickType.special,
   "",
   SpinType.immobilespin),
-  "o1":
-  new piece([
+  O1:
+  new piece("o1",[
     new vector2(0,0),
   ],
   tileModel.fromString(`
@@ -519,31 +524,104 @@ export const pieces = Object.freeze({
     100000
     100000
     `),
-  kickType.T,
+  kickType.none,
   "",
   SpinType.immobilespin).lodgeable(),
 
+  //polyplets
+
+  dia2:piece.fromString("dia2",`
+     #
+    #
+    `,tileModel.fromString(`
+  &
+    
+    122222
+    230003
+    200000
+    200000
+    200000
+    230003
+    `)),
+
+  dia3:piece.fromString("dia3",`
+      #
+     #
+    #
+    `,tileModel.fromString(`
+  &
+    
+    133333
+    300002
+    300000
+    300000
+    300000
+    320000
+    `)),
+
+  bend2_1:piece.fromString("bend2_1",`
+      #
+    ##
+    `,tileModel.fromString(`
+  &
+    
+    122222
+    230003
+    200000
+    230303
+    200000
+    230003
+    `)),
+
+  bend2_1p:piece.fromString("bend2_1p",`
+    # 
+     ##
+    `,tileModel.fromString(`
+  &
+    
+    133333
+    320202
+    300000
+    320002
+    300000
+    320202
+    `)),
+
+  caret:piece.fromString("caret",`
+     #
+    # #
+    `,tileModel.fromString(`
+  &
+    
+    122222
+    230303
+    200000
+    230303
+    200000
+    230303
+    `)),
+
   //-----novelties
   //jump square and jump square derivatives
-  "o9":piece.fromString(`
+  O9:piece.fromString("o9",`
     ###
     ###
     ###
     `,tileModels.O,"bob"),
-  "o16":piece.fromString(`
+  O16:piece.fromString("o16",`
     ####
     ####
     ####
     ####
     `,tileModels.O,"robert"),
-  "o25":piece.fromString(`
+  O25:piece.fromString("o25",`
     #####
     #####
     #####
     #####
     #####
     `,tileModels.O,"o25"),
-  "o36":piece.fromString(`
+  O36:piece.fromString("o36",`
     ######
     ######
     ######
@@ -551,7 +629,7 @@ export const pieces = Object.freeze({
     ######
     ######
     `,tileModels.O,"o36"),
-  "o49":piece.fromString(`
+  O49:piece.fromString("o49",`
     #######
     #######
     #######
@@ -560,7 +638,7 @@ export const pieces = Object.freeze({
     #######
     #######
     `,tileModels.O,"o49"),
-  "o64":piece.fromString(`
+  O64:piece.fromString("o64",`
     ########
     ########
     ########
@@ -570,7 +648,7 @@ export const pieces = Object.freeze({
     ########
     ########
     `,tileModels.O,"o64"),
-  "o81":piece.fromString(`
+  O81:piece.fromString("o81",`
     #########
     #########
     #########
@@ -581,7 +659,7 @@ export const pieces = Object.freeze({
     #########
     #########
     `,tileModels.O,"o81"),
-  "o100":piece.fromString(`
+  O100:piece.fromString("o100",`
     ##########
     ##########
     ##########
@@ -595,7 +673,7 @@ export const pieces = Object.freeze({
     `,tileModels.O,"o100"),
 
   //furries
-  "rane":piece.fromString(`
+  rane:piece.fromString("rane",`
     #     #
 
     # # # #
@@ -603,13 +681,13 @@ export const pieces = Object.freeze({
      # # #
       # #
     `,tileModels.T,"rane"),
-  ":3":piece.fromString(`
+  ":3":piece.fromString("colonthree",`
     # ###
        #
     #   #
       ###
     `,tileModels.I,":3"),
-  "krux":piece.fromString(`
+  krux:piece.fromString("krux",`
        #######
       #####  #
       #####  #
@@ -647,7 +725,7 @@ export const bagprefabs = Object.freeze({
     pieces.T,
     pieces.J,
     pieces.S,
-    pieces['o1'].withName("grenade").withModel(tileModels.grenade).withGimmick(tileType.grenade),
+    pieces['O1'].withName("grenade").withModel(tileModels.grenade).withGimmick(tileType.grenade),
   ],
   cursedTennis: [
     pieces.I.withModel(new tileModel(()=>{
@@ -719,74 +797,74 @@ export const bagprefabs = Object.freeze({
     pieces.I5,
   ],
   m123: [
-    pieces['l3'],
-    pieces['i3'],
-    pieces['i2'],
-    pieces['o1'],
+    pieces['C'],
+    pieces['I3'],
+    pieces['I2'],
+    pieces['O1'],
   ],
   fixedM123: [
-    pieces['l3'].rotated(0).withModel(new tileModel(colour3.fromHSV( 0/9,0.6901,0.9490))).withRotationCleared(),
-    pieces['l3'].rotated(1).withModel(new tileModel(colour3.fromHSV( 1/9,0.6901,0.9490))).withRotationCleared(),
-    pieces['l3'].rotated(2).withModel(new tileModel(colour3.fromHSV( 2/9,0.6901,0.9490))).withRotationCleared(),
-    pieces['l3'].rotated(3).withModel(new tileModel(colour3.fromHSV( 3/9,0.6901,0.9490))).withRotationCleared(),
-    pieces['i3'].rotated(0).withModel(new tileModel(colour3.fromHSV( 4/9,0.6901,0.9490))).withRotationCleared(),
-    pieces['i3'].rotated(1).withModel(new tileModel(colour3.fromHSV( 5/9,0.6901,0.9490))).withRotationCleared(),
-    pieces['i2'].rotated(0).withModel(new tileModel(colour3.fromHSV( 6/9,0.6901,0.9490))).withRotationCleared(),
-    pieces['i2'].rotated(1).withModel(new tileModel(colour3.fromHSV( 7/9,0.6901,0.9490))).withRotationCleared(),
-    pieces['o1'].rotated(0).withModel(new tileModel(colour3.fromHSV( 8/9,0.6901,0.9490))).withRotationCleared(),
+    pieces['C'].rotated(0).withModel(new tileModel(colour3.fromHSV( 0/9,0.6901,0.9490))).withRotationCleared(),
+    pieces['C'].rotated(1).withModel(new tileModel(colour3.fromHSV( 1/9,0.6901,0.9490))).withRotationCleared(),
+    pieces['C'].rotated(2).withModel(new tileModel(colour3.fromHSV( 2/9,0.6901,0.9490))).withRotationCleared(),
+    pieces['C'].rotated(3).withModel(new tileModel(colour3.fromHSV( 3/9,0.6901,0.9490))).withRotationCleared(),
+    pieces['I3'].rotated(0).withModel(new tileModel(colour3.fromHSV( 4/9,0.6901,0.9490))).withRotationCleared(),
+    pieces['I3'].rotated(1).withModel(new tileModel(colour3.fromHSV( 5/9,0.6901,0.9490))).withRotationCleared(),
+    pieces['I2'].rotated(0).withModel(new tileModel(colour3.fromHSV( 6/9,0.6901,0.9490))).withRotationCleared(),
+    pieces['I2'].rotated(1).withModel(new tileModel(colour3.fromHSV( 7/9,0.6901,0.9490))).withRotationCleared(),
+    pieces['O1'].rotated(0).withModel(new tileModel(colour3.fromHSV( 8/9,0.6901,0.9490))).withRotationCleared(),
   ],
   sulfir: [
-    piece.fromString(`
+    piece.fromString("sulfirS",`
        ##
       ##
         #
       ##
       `,tileModels.S,"S"),
-    piece.fromString(`
+    piece.fromString("sulfiru",`
       # #
       # #
        ##
       `,tileModels.J,"u"),
-    piece.fromString(`
+    piece.fromString("sulfirl",`
       ##
        #
        #
         #
       `,tileModels.L,"l"),
-    piece.fromString(`
+    piece.fromString("sulfirpipe",`
        #
        #
        #
        #
       `,tileModels.I,"|"),
-    piece.fromString(`
+    piece.fromString("sulfirf",`
        ##
       #
       ##
       #
       `,tileModels.T,"f"),
-    piece.fromString(`
+    piece.fromString("sulfiri",`
        #
       
       ##
        ##
       `,tileModels.Z,"i"),
-    piece.fromString(`
+    piece.fromString("sulfirr",`
       ###
       #
       #
       `,tileModels.O,"r"),
   ],
   fool9: [
-    piece.fromString(`
+    piece.fromString("fool9z",`
       # ##
          ## #
       `,tileModels.Z,"Z - 9"),
-    piece.fromString(`
+    piece.fromString("fool9l",`
           # #
       # ###
       `,tileModels.L,"L - 9"),
-    piece.fromString(`
+    piece.fromString("fool9o",`
       #
 
       ##
@@ -794,11 +872,11 @@ export const bagprefabs = Object.freeze({
 
        #
       `,tileModels.O,"O - 9"),
-    piece.fromString(`
+    piece.fromString("fool9s",`
          ## #
       # ##
       `,tileModels.S,"S - 9"),
-    piece.fromString(`
+    piece.fromString("fool9i",`
       #
        
         #
@@ -807,11 +885,11 @@ export const bagprefabs = Object.freeze({
 
             #
       `,tileModels.I,"I - 9"),
-    piece.fromString(`
+    piece.fromString("fool9j",`
       # #
         ### #
       `,tileModels.J,"J - 9"),
-    piece.fromString(`
+    piece.fromString("fool9t",`
        #
 
        #
@@ -821,7 +899,7 @@ export const bagprefabs = Object.freeze({
       `,tileModels.T,"T - 9"),
   ],
   fool10: [
-    piece.fromString(`
+    piece.fromString("fool10z",`
        ##
       # ##
         #
@@ -829,12 +907,12 @@ export const bagprefabs = Object.freeze({
       ## #
        ##
       `,tileModels.Z,"Z - 10"),
-    piece.fromString(`
+    piece.fromString("fool10l",`
           #
       #    #
       ######
       `,tileModels.L,"L - 10"),
-    piece.fromString(`
+    piece.fromString("fool10o",`
         ##
        ####
       ##  ##
@@ -842,7 +920,7 @@ export const bagprefabs = Object.freeze({
        ####
         ##
       `,tileModels.O,"O - 10"),
-    piece.fromString(`
+    piece.fromString("fool10s",`
        ##
       ## #
        #
@@ -850,16 +928,16 @@ export const bagprefabs = Object.freeze({
       # ##
        ##
       `,tileModels.S,"S - 10"),
-    piece.fromString(`
+    piece.fromString("fool10i",`
        #### #
       # ####
       `,tileModels.I,"I - 10"),
-    piece.fromString(`
+    piece.fromString("fool10j",`
        #   
       #    #
       ######
       `,tileModels.J,"J - 10"),
-    piece.fromString(`
+    piece.fromString("fool10t",`
       #####
       # # #
         #
@@ -867,4 +945,584 @@ export const bagprefabs = Object.freeze({
        ###
       `,tileModels.T,"T - 10"),
   ],
+  boiledpasta: [
+    piece.fromString("boiledpastaz",`
+         ####
+      #######
+      #######
+         ###
+        ###
+        ######
+       #######
+       ###
+      `,tileModels.Z,"Z - 10"),
+    piece.fromString("boiledpastal",`
+      ##
+      ###
+       ##
+       ##
+       ###
+        ##
+        ##
+        ##
+        ####
+         ###
+      `,tileModels.L,"L - 10"),
+    piece.fromString("boiledpastao",`
+       ###
+      #####
+      ## ##
+      ##  ##
+      ##  ##
+       ## ##
+       #####
+        ###
+      `,tileModels.O,"O - 10"),
+    piece.fromString("boiledpastas",`
+       #####
+      #######
+      ###  ##
+       ####
+        ####
+      ## ####
+      #######
+       #####
+      `,tileModels.S,"S - 10"),
+    piece.fromString("boiledpastai",`
+        ##
+        ##
+
+       ##
+      ####
+      ####
+        ##
+        ###
+        ####
+         ###
+      `,tileModels.I,"I - 10"),
+    piece.fromString("boiledpastaj",`
+         ##
+         ##
+
+       ####
+      #####
+      ## ###
+          ##
+          ##
+          ##
+      ##  ##
+      ######
+       ####
+      `,tileModels.J,"J - 10"),
+    piece.fromString("boiledpastat",`
+       ##
+       ##
+       ####
+      #####
+      33
+      33
+      33
+      333
+       33333
+        3333
+      `,tileModels.T,"T - 10"),
+  ],
+  tetraplets: [
+    //two reflection symmetries
+    piece.fromString("dia4",`
+         #
+        #
+       #
+      #
+      `,tileModel.fromString(`
+    &
+      
+      133333
+      321112
+      312121
+      321112
+      312121
+      321112
+      `)),
+
+    piece.fromString("degrees",`
+       #
+      # #
+       #
+      `,tileModel.fromString(`
+    &
+      
+      122222
+      231113
+      213131
+      231313
+      213131
+      231113
+      `)).lodgeable(),
+
+    piece.fromString("I",`
+      ####
+      `,tileModel.fromString(`
+    &
+      
+      122222
+      231113
+      213131
+      231113
+      213131
+      231113
+      `)),
+
+    piece.fromString("O",`
+      ##
+      ##
+      `,tileModel.fromString(`
+    &
+      
+      133333
+      321112
+      312121
+      321312
+      312121
+      321112
+      `)).lodgeable(),
+    //one reflection symmetry
+
+    piece.fromString("resh",`
+        #
+        #
+      ##
+      `,tileModel.fromString(`
+    &
+      
+      133333
+      321212
+      312121
+      321112
+      312121
+      321212
+      `)),
+
+    piece.fromString("heartmark",`
+       #
+      ##
+        #
+      `,tileModel.fromString(`
+    &
+      
+      122222
+      233133
+      233133
+      211311
+      233133
+      233133
+      `)),
+
+    piece.fromString("parenthesis",`
+      #  #
+       ##
+      `,tileModel.fromString(`
+    &
+      
+      122222
+      233133
+      233333
+      211111
+      233333
+      233133
+      `)),
+
+    piece.fromString("ren",`
+      # #
+       #
+       #
+      `,tileModel.fromString(`
+    &
+      
+      122222
+      233333
+      233133
+      211311
+      233133
+      233333
+      `)),
+
+    piece.fromString("ayin",`
+      # #
+       #
+      #
+      `,tileModel.fromString(`
+    &
+      
+      122222
+      233333
+      233133
+      231113
+      233133
+      233333
+    `)),
+
+    piece.fromString("T",`
+       #
+      ###
+      `,tileModel.fromString(`
+    &
+      
+      133333
+      322222
+      322122
+      321112
+      322122
+      322222
+    `)),
+
+    // 180 rotational symmetry
+
+    piece.fromString("slash",`
+      # 
+       ##
+         #
+      `,tileModel.fromString(`
+    &
+      
+      122222
+      222202
+      222022
+      220222
+      202222
+      222222
+      `)),
+
+    piece.fromString("backslash",`
+         #
+       ##
+      #  
+      `,tileModel.fromString(`
+    &
+      
+      133333
+      333303
+      333033
+      330333
+      303333
+      333333
+      `)),
+
+    piece.fromString("sigmoid",`
+        ##
+      ##
+      `,tileModel.fromString(`
+    &
+      
+      122222
+      202222
+      220222
+      222022
+      222202
+      222222
+      `)),
+
+    piece.fromString("tangent",`
+      ##
+        ## 
+      `,tileModel.fromString(`
+    &
+      
+      133333
+      303333
+      330333
+      333033
+      333303
+      333333
+      `)),
+
+    piece.fromString("tilde",`
+       # #
+      # #
+      `,tileModel.fromString(`
+    &
+      
+      122222
+      202202
+      222022
+      220222
+      202202
+      222222
+      `)),
+
+    piece.fromString("aibu",`
+      # #
+       # # 
+      `,tileModel.fromString(`
+    &
+      
+      133333
+      303303
+      333033
+      330333
+      303303
+      333333
+      `)),
+
+    piece.fromString("Z",`
+      ##
+       ##
+      `,tileModel.fromString(`
+    &
+      
+      122222
+      202202
+      220222
+      222022
+      202202
+      222222
+      `)),
+
+    piece.fromString("S",`
+       ##
+      ## 
+      `,tileModel.fromString(`
+    &
+      
+      133333
+      303303
+      330333
+      333033
+      303303
+      333333
+      `)),
+
+    //no symmetry
+    piece.fromString("glottal",`
+       #
+      # ##
+      `,tileModel.fromString(`
+    &
+      
+      122222
+      200002
+      202222
+      202222
+      202222
+      222222
+      `)),
+
+    piece.fromString("pharyngeal",`
+        #
+      ## #
+      `,tileModel.fromString(`
+    &
+      
+      133333
+      300003
+      303333
+      303333
+      303333
+      333333
+      `)),
+
+    piece.fromString("bend2_2",`
+         #
+        #
+      ## 
+      `,tileModel.fromString(`
+    &
+      
+      122222
+      202222
+      202222
+      202222
+      200002
+      222222
+      `)),
+
+    piece.fromString("bend2_2p",`
+      #
+       #
+        ##
+      `,tileModel.fromString(`
+    &
+      
+      133333
+      303333
+      303333
+      303333
+      300003
+      333333
+      `)),
+
+    piece.fromString("waw",`
+         #
+      ### 
+      `,tileModel.fromString(`
+    &
+      
+      122222
+      222202
+      222202
+      222202
+      200002
+      222222
+      `)),
+
+    piece.fromString("nun",`
+      #
+       ###
+      `,tileModel.fromString(`
+    &
+      
+      133333
+      333303
+      333303
+      333303
+      300003
+      333333
+      `)),
+
+    piece.fromString("question",`
+      #
+       #
+       ## 
+      `,tileModel.fromString(`
+    &
+      
+      122222
+      200002
+      222222
+      222222
+      200002
+      222222
+      `)),
+
+    piece.fromString("istifham",`
+        #
+       #
+      ##
+      `,tileModel.fromString(`
+    &
+      
+      133333
+      300003
+      333333
+      333333
+      300003
+      333333
+      `)),
+
+    piece.fromString("fishhook",`
+       #
+      #
+       ##
+      `,tileModel.fromString(`
+    &
+      
+      122222
+      202202
+      202202
+      202202
+      202202
+      222222
+      `)),
+
+    piece.fromString("shi",`
+       # 
+        #
+      ##
+      `,tileModel.fromString(`
+    &
+      
+      133333
+      303303
+      303303
+      303303
+      303303
+      333333
+      `)),
+
+    piece.fromString("nu",`
+      # #
+      ##
+      `,tileModel.fromString(`
+    &
+      
+      122222
+      200002
+      202202
+      202202
+      202202
+      222222
+      `)),
+
+    piece.fromString("и",`
+      # #
+       ##
+      `,tileModel.fromString(`
+    &
+      
+      133333
+      300003
+      303303
+      303303
+      303303
+      333333
+      `)),
+
+    piece.fromString("check",`
+         #
+      # #
+       #
+      `,tileModel.fromString(`
+    &
+      
+      122222
+      202202
+      202202
+      202202
+      200002
+      222222
+      `)),
+
+    piece.fromString("he",`
+      #
+       # #
+        #
+      `,tileModel.fromString(`
+    &
+      
+      133333
+      303303
+      303303
+      303303
+      300003
+      333333
+      `)),
+      
+    piece.fromString("J",`
+      #
+      ###
+      `,tileModel.fromString(`
+    &
+      
+      122222
+      200002
+      202202
+      202202
+      202202
+      222222
+      `)),
+
+    piece.fromString("L",`
+        #
+      ###
+      `,tileModel.fromString(`
+    &
+      
+      133333
+      300003
+      303303
+      303303
+      303303
+      333333
+      `)),
+  ]
 });

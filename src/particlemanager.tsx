@@ -1,5 +1,5 @@
 import { colour3, lerp, vector2 } from "./basics.ts";
-import { colourpossibility, SafeColour } from "./roms.ts";
+import { colourpossibility, SafeColour } from "./tilemodels.ts";
 
 export class curve<T>{
     start:T;

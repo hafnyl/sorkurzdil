@@ -1,5 +1,5 @@
 
-import { vector2 } from './basics';
+import { vector2 } from './basics.ts';
 import krux from './krexkd.png'
 
 export const images = Object.freeze({

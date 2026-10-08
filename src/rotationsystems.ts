@@ -5,6 +5,7 @@ import { piece } from "./pieces.ts";
 export enum kickType {
   none,
   auto,
+  special,
   T,
   I,
   O,
@@ -435,6 +436,87 @@ const trsN:specificKickTable = [
     [new vector2(+0,+0),new vector2(-1,+0),new vector2(+1,-1),new vector2(+1,-2),new vector2(+1,+0),new vector2(+0,-2),new vector2(+1,-3),new vector2(-1,+2),new vector2(+0,+3),new vector2(-1,+3),],
     [new vector2(+0,+0),new vector2(+1,+0),new vector2(+1,+1),new vector2(+0,-1),new vector2(-1,-2),],
     [new vector2(+0,+0),new vector2(-1,+0),new vector2(+0,-1),new vector2(-1,-2),new vector2(+1,-1),new vector2(+1,+0),new vector2(+1,+1),new vector2(+0,+2),new vector2(+0,+3),],
+    [],
+  ],
+]
+
+const trsI3:specificKickTable = [
+  [
+    [],
+    [new vector2(+0,+0),new vector2(-1,+0),new vector2(-1,-1),new vector2(+1,+1),new vector2(-1,+1),],
+    [],
+    [new vector2(+0,+0),new vector2(+1,+0),new vector2(+1,-1),new vector2(-1,+1),new vector2(+1,+1),],
+  ],
+  [
+    [new vector2(+0,+0),new vector2(-1,+0),new vector2(+1,+0),new vector2(-1,-1),new vector2(+1,+1),],
+    [],
+    [],
+    [],
+  ],
+  [
+    [],
+    [],
+    [],
+    [],
+  ],
+  [
+    [new vector2(+0,+0),new vector2(+1,+0),new vector2(-1,+0),new vector2(+1,-1),new vector2(-1,+1),],
+    [],
+    [],
+    [],
+  ],
+]
+
+const trsC:specificKickTable = [
+  [
+    [],
+    [new vector2(+0,+0),new vector2(-1,+0),new vector2(+1,+0),],
+    [new vector2(+0,+0),new vector2(+0,-1),new vector2(+1,-1),new vector2(-1,-1),],
+    [new vector2(+0,+0),new vector2(+0,+1),new vector2(+0,-1),],
+  ],
+  [
+    [new vector2(+0,+0),new vector2(+1,+0),new vector2(-1,+0),],
+    [],
+    [new vector2(+0,+0),new vector2(+0,+1),new vector2(+0,-1),],
+    [new vector2(+0,+0),new vector2(+0,-1),new vector2(-1,-1),new vector2(+1,-1),],
+  ],
+  [
+    [new vector2(+0,+0),new vector2(+0,+1),new vector2(-1,+1),new vector2(+1,+1),],
+    [new vector2(+0,+0),new vector2(+0,-1),new vector2(+0,+1),],
+    [],
+    [new vector2(+0,+0),new vector2(+1,+0),new vector2(-1,+0),],
+  ],
+  [
+    [new vector2(+0,+0),new vector2(+0,-1),new vector2(+0,+1),],
+    [new vector2(+0,+0),new vector2(+0,+1),new vector2(+1,+1),new vector2(-1,+1),],
+    [new vector2(+0,+0),new vector2(-1,+0),new vector2(+1,+0),],
+    [],
+  ],
+]
+
+const trsI2:specificKickTable = [
+  [
+    [],
+    [new vector2(+0,+0),new vector2(-1,+0),new vector2(+0,+1),],
+    [new vector2(+0,+0),new vector2(+0,-1),new vector2(+0,+1),],
+    [new vector2(+0,+0),new vector2(+1,+0),new vector2(+0,+1),],
+  ],
+  [
+    [new vector2(+0,+0),new vector2(+1,+0),new vector2(+0,+1),],
+    [],
+    [new vector2(+0,+0),new vector2(+1,+0),new vector2(+0,+2),],
+    [new vector2(+0,+0),new vector2(-1,+0),new vector2(+1,+0),],
+  ],
+  [
+    [new vector2(+0,+0),new vector2(+0,+1),new vector2(+0,-1),],
+    [new vector2(+0,+0),new vector2(+0,-1),new vector2(-1,+0),],
+    [],
+    [new vector2(+0,+0),new vector2(+0,-1),new vector2(-1,+0),],
+  ],
+  [
+    [new vector2(+0,+0),new vector2(-1,+0),new vector2(+0,+1),],
+    [new vector2(+0,+0),new vector2(+1,+0),new vector2(-1,+0),],
+    [new vector2(+0,+0),new vector2(-1,+0),new vector2(+0,+2),],
     [],
   ],
 ]
@@ -896,6 +978,24 @@ export const kickSystems = Object.freeze({
       var _kickType = _piece.ikickType
       if(!_kickType || _kickType == kickType.auto)
         _kickType = kickType.T
+
+      if(_kickType == kickType.special)
+        switch(_piece.id){
+          case "c3":
+            for(const shift of trsC[fromRot][toRot])
+                yield shift;
+            return
+          case "i3":
+            for(const shift of trsI3[fromRot][toRot])
+                yield shift;
+            return
+          case "i2":
+            for(const shift of trsI2[fromRot][toRot])
+                yield shift;
+            return
+          default:
+          _kickType = kickType.T
+        }
 
       for(const shift of basicOffsetKickTables(_kickType,rs.kickTables.techmino[_kickType],fromRot,toRot))
           yield shift;

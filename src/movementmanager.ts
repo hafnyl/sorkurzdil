@@ -1,6 +1,6 @@
 import { clone, colour3, vector2 } from "./basics.ts"
 import { board, tile, tileType } from "./board.ts";
-import { Command, gameConfig, simpleScoringSystems, spinDetection, userConfig } from "./config.ts";
+import { alignYType, Command, gameConfig, simpleScoringSystems, spinDetection, userConfig } from "./config.ts";
 import { gimmickReport } from "./gimmicks.ts";
 import InputManager from "./inputmanager.ts";
 import { piece } from "./pieces.ts";
@@ -16,6 +16,15 @@ export type lockReport={
     lodge:boolean,
     morph:boolean,
     gimmickReport:gimmickReport,
+}
+
+export type movementReport={
+    piece:piece,
+    position:vector2,
+    successful:boolean,
+    rotates?:boolean,
+    dies?:boolean,
+    clutches?:boolean,
 }
 
 export default class MovementManager{
@@ -105,52 +114,46 @@ export default class MovementManager{
         })
     }
 
-    Noncolliding(shift:vector2){
-        if(!this.board.activepiece)
-            return;
+    Noncolliding(shift:vector2,_piece:piece,position:vector2){
+        for (let i=0; i<_piece.tileoffsets.length; i++){
+            const offset = _piece.tileoffsets[i];
+            if(!this.board.matrix.IsValid(position.add(offset).add(shift))){
+                return false;
+            }
+        }
+        return true;
+    }
 
-        for (let i=0; i<this.board.activepiece.tileoffsets.length; i++){
-            const offset = this.board.activepiece.tileoffsets[i];
-            if(!this.board.matrix.IsValid(this.board.activeposition.add(offset).add(shift)))
+    StrictlyInBounds(shift:vector2,_piece:piece,position:vector2){
+        for (let i=0; i<_piece.tileoffsets.length; i++){
+            const offset = _piece.tileoffsets[i];
+            if(!this.board.matrix.StrictlyInBounds(position.add(offset).add(shift)))
                 return false;
         }
         return true;
     }
 
-    StrictlyInBounds(shift:vector2){
-        if(!this.board.activepiece)
-            return;
-
-        for (let i=0; i<this.board.activepiece.tileoffsets.length; i++){
-            const offset = this.board.activepiece.tileoffsets[i];
-            if(!this.board.matrix.StrictlyInBounds(this.board.activeposition.add(offset).add(shift)))
-                return false;
-        }
-        return true;
-    }
-
-    InBounds(shift:vector2){
-        if(!this.board.activepiece)
-            return;
-
-        for (let i=0; i<this.board.activepiece.tileoffsets.length; i++){
-            const offset = this.board.activepiece.tileoffsets[i];
-            if(!this.board.matrix.InBounds(this.board.activeposition.add(offset).add(shift)))
+    InBounds(shift:vector2,_piece:piece,position:vector2){
+        for (let i=0; i<_piece.tileoffsets.length; i++){
+            const offset = _piece.tileoffsets[i];
+            if(!this.board.matrix.InBounds(position.add(offset).add(shift)))
                 return false;
         }
         return true;
     }
 
     /**switches between valid placement and in bounds based on active piece phasing*/
-    ValidShift(shift:vector2){
+    ValidShift(shift:vector2,_piece:piece,position:vector2){
         if(this.game.gameConfig.activepiecephasethroughblocks)
-            return this.InBounds(shift);
+            return this.InBounds(shift,_piece,position);
         else
-            return this.Noncolliding(shift);
+            return this.Noncolliding(shift,_piece,position);
     }
 
     Grounded(){
-        return !this.ValidShift(vector2.down);
+        if(!this.board.activepiece)
+            return false
+        return !this.ValidShift(vector2.down,this.board.activepiece,this.board.activeposition);
     }
 
     /**how much can you shift downwards before you hit something (aka ghost piece calculation)
@@ -161,13 +164,13 @@ export default class MovementManager{
      * 
      * this uses placement checking so you can use it with harddrop
     */
-    DropHeight(dropdirection=vector2.down){
+    DropHeight(dropdirection=vector2.down,_piece:piece,position:vector2){
         if(!this.board.activepiece)
             return vector2.zero;
 
         let dropHeight = vector2.zero;
         let exhaust = 0
-        while(this.Noncolliding(dropHeight.add(dropdirection)) && this.InBounds(dropHeight.add(dropdirection))){
+        while(this.Noncolliding(dropHeight.add(dropdirection),_piece,position) && this.InBounds(dropHeight.add(dropdirection),_piece,position)){
             dropHeight = dropHeight.add(dropdirection);
             
             exhaust++;
@@ -178,7 +181,7 @@ export default class MovementManager{
         return dropHeight;
     }
 
-    ValidPiece(_piece:piece,shift:vector2=vector2.zero,position:vector2=this.board.activeposition){
+    ValidPiece(_piece:piece,shift:vector2=vector2.zero,position:vector2){
         for (const offset of _piece.tileoffsets){
             if(this.game.gameConfig.activepiecephasethroughblocks && !this.board.matrix.InBounds(position.add(offset).add(shift)))
                 return false
@@ -190,9 +193,9 @@ export default class MovementManager{
 
     //piece movement
 
-    Leeway(fallHeight:number){
+    Leeway(fallHeight:number,_piece:piece,position:vector2){
         for(let i=1; i<=fallHeight; i++)
-            if(!this.ValidShift(new vector2(0,-i)))
+            if(!this.ValidShift(new vector2(0,-i),_piece,position))
                 return false;
         return true;
     }
@@ -200,7 +203,7 @@ export default class MovementManager{
     AttemptShift(shift:vector2){
         if(!this.board.activepiece)
             return false
-        if(!this.ValidShift(shift))
+        if(!this.ValidShift(shift,this.board.activepiece,this.board.activeposition))
             return false
         this.board.activeposition = this.board.activeposition.add(shift);
         return true
@@ -243,7 +246,7 @@ export default class MovementManager{
             const earlylock = this.EvaluateEarlyLockGimmicks()
             if(!success) break
             if(earlylock){
-                this.Lock(this.ValidShift(vector2.down) || !lockintent);
+                this.Lock(this.ValidShift(vector2.down,this.board.activepiece,this.board.activeposition) || !lockintent);
                 break
             }
             dropHeight += 1
@@ -253,52 +256,43 @@ export default class MovementManager{
         return dropHeight
     }
 
-    AttemptHadamard(other:vector2){
-        if(!this.board.activepiece)
-            return
-
-        let rotatedPiece = clone(this.board.activepiece);
-        rotatedPiece.Hadamard(other);
-
-        const fromRot = this.board.activepiece.orientiation;
-        const toRot = (rotatedPiece.orientiation + 2) % 4;
-
-        for(const shift of this.game.gameConfig.kickSystem(rotatedPiece,fromRot,toRot))
-            if(this.ValidPiece(rotatedPiece,shift)){
-                this.board.activepiece = rotatedPiece;
-                this.board.activeposition = this.board.activeposition.add(shift);
-                return true
-            }
-        
-        
-        return false
-    }
-
     justlodged = false
     morphed = false
 
-    AttemptLodge(){
+    Lodge(flipdirection=false){
         if(!this.board.activepiece)
-            return false
+            return
 
-        for(const i of this.game.gameConfig.lodges){
-            if(!this.ValidPiece(this.board.activepiece,i)) continue
+        const lodgeattempt = this.AttemptLodge(this.board.activepiece,this.board.activeposition,flipdirection)
+
+        if(lodgeattempt.successful){
+            this.board.activepiece = lodgeattempt.piece
+            this.board.activeposition = lodgeattempt.position
+
+            this.justlodged = true
+        }
+    }
+
+    AttemptLodge(_piece:piece,position:vector2,flipdirection=false):movementReport{
+        for(const ir of this.game.gameConfig.lodges){
+            const i = flipdirection ? ir.hadamard(new vector2(-1,1)) : ir;
+            if(!this.ValidPiece(_piece,i,position)) continue
 
             const [spin,mini,immobile] = this.SpinDetection(this.board.activeposition.add(i))
-            console.log("eoua2")
-            console.log(i)
             if(spin || mini || immobile){
-                console.log("eoua")
-                console.log(i)
-                console.log(this.board.activeposition)
-                this.board.activeposition = this.board.activeposition.add(i)
-                console.log(this.board.activeposition)
-                this.justlodged = true
-                return true
+                return {
+                    piece:_piece,
+                    position:position.add(i),
+                    successful:true,
+                }
             }
         }
 
-        return false
+        return {
+            piece:_piece,
+            position:position,
+            successful:false,
+        }
     }
 
     //still 90 degree clockwise turns
@@ -306,25 +300,76 @@ export default class MovementManager{
         if(!this.board.activepiece)
             return
 
-        let success = this.AttemptRotate(turns);
+        let rotateattempt = this.AttemptRotate(turns,this.board.activepiece,this.board.activeposition);
 
-        if(success){
+        if(rotateattempt.successful){
+            this.board.activepiece = rotateattempt.piece
+            this.board.activeposition = rotateattempt.position
+
             this.LockCancel();
             this.spineligible = this.Grounded();
 
             const [spin,mini,immobile] = this.SpinDetection();
             this.game.flags.justspinned = spin || mini || immobile;
-            this.justlodged = false
+            //this.justlodged = false // if its lodgable it should be without any kicks but i dunno
 
             this.EarlyLock();
         }
 
         if(this.board.activepiece.lodgeability)
-            this.AttemptLodge()
+            this.Lodge(turns==3)
+    }
+
+    //still 90 degree clockwise turns
+    AttemptRotate(turns:number,_piece:piece,position:vector2):movementReport{
+        position = clone(position)
+
+        turns = ((_piece.orientiation + turns) % _piece.symmetry) - _piece.orientiation
+        turns = (turns + 4) % 4
+
+        let rotatedPiece = _piece.rotated(turns)
+
+        const fromRot = _piece.orientiation;
+        const toRot = rotatedPiece.orientiation;
+
+        var i = 0;
+        var firstreport:movementReport|undefined;
+        for(const shift of this.game.gameConfig.kickSystem(rotatedPiece,fromRot,toRot)){
+            if(i == 0)
+                firstreport = {
+                    piece:rotatedPiece,
+                    position:position,
+                    successful:false
+                }
+
+            if(this.ValidPiece(rotatedPiece,shift,position)){
+                position = position.add(shift);
+                
+                if(i == 1)
+                    this.minieligible = true;
+                if(i > 0)
+                    this.justlodged = false; // (even though a lodgeable piece shouldnt have any kicks) just in case
+                return {
+                    piece:rotatedPiece,
+                    position:position,
+                    successful:true,
+                }
+            }
+            i++;
+        }
+        
+        return firstreport || {
+            piece:rotatedPiece,
+            position:position,
+            successful:false
+        }
     }
 
     Hadamard(other:vector2){
-        let success = this.AttemptHadamard(other);
+        if(!this.board.activepiece)
+            return
+
+        let success = this.AttemptHadamard(other,this.board.activepiece,this.board.activeposition);
 
         if(success){
             this.LockCancel();
@@ -332,40 +377,47 @@ export default class MovementManager{
 
             const [spin,mini,immobile] = this.SpinDetection();
             this.game.flags.justspinned = spin || mini || immobile;
-            this.justlodged = false
             
             this.EarlyLock();
         }
+
+        if(this.board.activepiece.lodgeability)
+            this.Lodge()
     }
 
-    //still 90 degree clockwise turns
-    AttemptRotate(turns:number){
-        if(!this.board.activepiece)
-            return
+    AttemptHadamard(other:vector2,_piece:piece,position:vector2):movementReport{
+        let rotatedPiece = clone(_piece);
+        rotatedPiece.Hadamard(other);
 
-        turns = ((this.board.activepiece.orientiation + turns) % this.board.activepiece.symmetry) - this.board.activepiece.orientiation
-        turns = (turns + 4) % 4
-
-        let rotatedPiece = this.board.activepiece.rotated(turns)
-
-        const fromRot = this.board.activepiece.orientiation;
-        const toRot = rotatedPiece.orientiation;
+        const fromRot = _piece.orientiation;
+        const toRot = (rotatedPiece.orientiation + 2) % 4;
 
         var i = 0;
+        var firstreport:movementReport|undefined;
         for(const shift of this.game.gameConfig.kickSystem(rotatedPiece,fromRot,toRot)){
-            i++;
-            if(this.ValidPiece(rotatedPiece,shift)){
-                this.board.activepiece = rotatedPiece;
-                this.board.activeposition = this.board.activeposition.add(shift);
+            if(i == 0)
+                firstreport = {
+                    piece:rotatedPiece,
+                    position:position,
+                    successful:false
+                }
 
-                if(i == 2)
-                    this.minieligible = true;
-                return true
+            if(this.ValidPiece(rotatedPiece,shift,position)){
+                return {
+                    piece:rotatedPiece,
+                    position:position.add(shift),
+                    successful:false
+                }
             }
+            i++
         }
         
         
-        return false
+        return firstreport || {
+            piece:rotatedPiece,
+            position:position,
+            successful:false
+        }
     }
 
     /**function to calculate delayed auto shift */
@@ -406,28 +458,89 @@ export default class MovementManager{
 
     clutcheligible = false;
 
+    SpawnLocation(_piece:piece,doclutch:boolean):movementReport{
+        var spawnlocation = this.board.spawnlocation
+        var spawnpiece = clone(_piece)
+        var rotates = false
+        var dies = false
+        var clutches = false
+        var bounds = _piece.bounds
+        var [northeast,southwest] = spawnpiece.boundingrectangle
+        
+
+        if(bounds.x > this.board.matrix.width){
+            if(bounds.y > this.board.matrix.width)
+                throw new Error("unculled bad piece")
+            rotates = true
+            const rotationreport = this.AttemptRotate(1,_piece,spawnlocation)
+            spawnpiece = rotationreport.piece
+            spawnlocation = rotationreport.position
+            bounds = spawnpiece.bounds;
+            [northeast,southwest] = spawnpiece.boundingrectangle
+        }
+
+        switch(this.game.gameConfig.spawnAlignY){
+            case alignYType.top:
+                spawnlocation = spawnlocation.add(vector2.down.mul(northeast.y))
+                break
+            case alignYType.bottom:
+                spawnlocation = spawnlocation.add(vector2.up.mul(-southwest.y))
+        }
+
+        if(spawnlocation.x + southwest.x < 0)
+            spawnlocation = new vector2(-southwest.x,spawnlocation.y)
+        if(spawnlocation.x + northeast.x >= this.board.matrix.width)
+            spawnlocation = new vector2(this.board.matrix.width - northeast.x - 1,spawnlocation.y)
+        
+
+        var usemargin = this.game.gameConfig.pieceSpawnMargin
+        if(this.game.gameConfig.clutching && this.clutcheligible && doclutch){
+            usemargin = 0
+            clutches = true
+        }
+
+        if(!this.ValidShift(vector2.zero,spawnpiece,spawnlocation)){
+            if(usemargin < 0)
+                dies = true
+        }else
+            clutches = false
+
+        if(usemargin >= 0){
+            if(this.game.gameConfig.spawnMarginUseLeeway)
+                while(!this.Leeway(usemargin,spawnpiece,spawnlocation))
+                    spawnlocation = spawnlocation.add(vector2.up);
+            else{
+                const aboveboard = this.board.matrix.GetEffectiveHeight() + usemargin
+                spawnlocation = new vector2(
+                    spawnlocation.x,
+                    Math.max(spawnlocation.y,aboveboard)
+                )
+            }
+        }
+
+        return {
+            piece:spawnpiece,
+            position:spawnlocation,
+            rotates:rotates,
+            dies:dies,
+            clutches:clutches,
+            successful:!dies,
+        }
+    }
+
     /**doesnt actually choose the piece to be spawned */
     SpawnPiece(){
         if(!this.board.activepiece)
             throw new Error("spawn no piece")
 
-        this.board.activeposition = this.board.piecespawnlocation;
-
-        if(this.game.gameConfig.aligntoptile){
-            var topy = 0
-            for(const i of this.board.activepiece.tileoffsets)
-                topy = Math.max(i.y,topy)
-            this.board.activeposition = this.board.activeposition.add(new vector2(0,-topy))
-        }
-
-        var usemargin = this.game.gameConfig.pieceSpawnMargin
-        if(this.game.gameConfig.clutching && this.clutcheligible)
-            usemargin = 0
-
-        if(!this.ValidShift(vector2.zero) && usemargin < 0)
+        const slR = this.SpawnLocation(this.board.activepiece,true)
+        this.board.activepiece = slR.piece
+        this.board.activeposition = slR.position
+        if(slR.dies){
             this.game.gameOver = true;
-
-        if(!this.ValidShift(vector2.zero) && this.game.gameConfig.clutching && this.clutcheligible)
+            this.board.matrix.Die();
+        }
+        if(slR.clutches){
             this.game.flags.otheralerts.push({
                 time:0,
                 code:"generic",
@@ -436,19 +549,6 @@ export default class MovementManager{
                     colour:colour3.fromHex("#ff00ff")
                 },
             })
-        this.clutcheligible = false
-
-        if(usemargin >= 0){
-            if(this.game.gameConfig.spawnMarginUseLeeway)
-                while(!this.Leeway(usemargin))
-                    this.board.activeposition = this.board.activeposition.add(vector2.up);
-            else{
-                const aboveboard = this.board.matrix.GetEffectiveHeight() + usemargin
-                this.board.activeposition = new vector2(
-                    this.board.activeposition.x,
-                    Math.max(this.board.activeposition.y,aboveboard)
-                )
-            }
         }
 
         this.gravityelapsed = 0;
@@ -593,10 +693,12 @@ export default class MovementManager{
     Lock(earlylock=false){
         if(!this.board.activepiece)
             return
-        if(!this.Noncolliding(vector2.zero) || !this.InBounds(vector2.zero))
+        if(!this.Noncolliding(vector2.zero,this.board.activepiece,this.board.activeposition) || !this.InBounds(vector2.zero,this.board.activepiece,this.board.activeposition))
             return
-        if(this.game.gameConfig.verticallineclears && !this.StrictlyInBounds(vector2.zero))
+        if(this.game.gameConfig.verticallineclears && !this.StrictlyInBounds(vector2.zero,this.board.activepiece,this.board.activeposition))
             return
+
+        this.clutcheligible = false
 
         var [spin, mini, immobile] = this.SpinDetection()
         if (!this.spineligible)
@@ -689,6 +791,9 @@ export default class MovementManager{
     }
 
     StepSoftDrop(deltaTime:number){
+        if(!this.board.activepiece)
+            return
+
         var displacement = (this.game.userConfig.sdf - 1);
         if(this.game.userConfig.usesdarr || !this.game.gameConfig.usegravity)
             displacement = 1 / this.game.userConfig.sdarr * this.game.gameConfig.gravity;
@@ -696,14 +801,14 @@ export default class MovementManager{
         console.log(displacement)
 
         if(!isFinite(displacement) || isNaN(displacement))
-            displacement = -this.DropHeight().y * this.game.gameConfig.gravity;
+            displacement = -this.DropHeight(vector2.down,this.board.activepiece,this.board.activeposition).y * this.game.gameConfig.gravity;
             
         this.gravityelapsed += displacement * deltaTime;
 
         if(this.game.gameConfig.gravity !== 0)
             this.game.flags.nongravitydisplacementthisframe = this.game.flags.nongravitydisplacementthisframe.add(vector2.down.mul(displacement / this.game.gameConfig.gravity));
         else
-            this.game.flags.nongravitydisplacementthisframe = this.game.flags.nongravitydisplacementthisframe.add(this.DropHeight());
+            this.game.flags.nongravitydisplacementthisframe = this.game.flags.nongravitydisplacementthisframe.add(this.DropHeight(vector2.down,this.board.activepiece,this.board.activeposition));
     }
 
     WhileInAir(deltaTime:number){
