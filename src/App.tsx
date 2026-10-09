@@ -10,7 +10,7 @@ import InputManager from './inputmanager.ts';
 import configs from './configprefabs.ts'
 import { kickSystems } from './rotationsystems.ts';
 import TextDisplay from './debugu.tsx'
-import { tile } from './board.ts';
+import { boundstype, tile } from './board.ts';
 import { LinesGenerator, SpecklesGarbage } from './garbagegeneration.ts';
 import { AdhereToGlue } from './gimmicks.ts';
 import { Damnation, NwideGarbage, OneBlockGarbage, StraightGarbage } from './garbagelinetypes.ts';
@@ -40,7 +40,12 @@ _gameConfig.debug = true;
 //_gameConfig.pieceChoice = new BasePieceGenerator(bagprefabs.pentominos.concat(bagprefabs.m123).concat(bagprefabs.freeTetrominos))
 //_gameConfig.pieceChoice = new BasePieceGenerator(bagprefabs.pentominos)
 //_gameConfig.pieceChoice = new BasePieceGenerator(bagprefabs.m123)
-_gameConfig.pieceChoice = new BasePieceGenerator(bagprefabs.tetraplets)
+//_gameConfig.pieceChoice = new BasePieceGenerator(bagprefabs.tetraplets)
+
+_gameConfig.boundstype = boundstype.tower
+_gameConfig.allowAirLock = true
+
+//_gameConfig.backfire = 1
 
 //_gameConfig.Splice(configs.m123)
 

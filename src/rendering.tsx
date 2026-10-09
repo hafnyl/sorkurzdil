@@ -97,7 +97,7 @@ export class rendering {
             compensatezoom = 4 / length
         }
 
-        var compensateoffset = new vector2(0,Math.floor(Math.min(-piece.boundingrectangle[1].y,2)-0.5)+1);
+        var compensateoffset = new vector2(0,Math.floor(Math.min(piece.boundingrectangle.south,2)-0.5)+1);
         if(bounds.x%2==0)
             compensateoffset = compensateoffset.add(new vector2(-0.5,0))
 

@@ -114,9 +114,10 @@ export class gameManager{
         if(_gameConfig.twoplayer)
             this.game2 = new game(_gameConfig,_userConfig,this.inputManager);
 
-        const _matrix = new matrix(_gameConfig.width,_gameConfig.height);
+        const _matrix = new matrix(_gameConfig);
         const piecespawnlocation = new vector2(Math.ceil(_gameConfig.width/2) - 1,_gameConfig.height).add(_gameConfig.spawnOffset);
         this.board = new board(_matrix,piecespawnlocation)
+        this.board.boundstype = _gameConfig.boundstype
 
         this.pieceChoice = clone(_gameConfig.pieceChoice);
         this.pieceChoice.Seed(seed)
@@ -127,7 +128,7 @@ export class gameManager{
         const tospawn = this.PopQueue()
         if(!tospawn)
             throw new Error("no pieces")
-        const spawnslR = this.movementManager.SpawnLocation(tospawn)
+        const spawnslR = this.movementManager.SpawnLocation(tospawn,false)
         this.board.activepiece = spawnslR.piece;
         this.board.activeposition = spawnslR.position;
         if(spawnslR.dies)
@@ -149,6 +150,7 @@ export class gameManager{
 
         this.garbageGeneration = _gameConfig.garbageChoice || new LinesGenerator(new StraightGarbage())
         this.garbageGeneration.Seed(seed)
+        this.currentgenerator = this.garbageGeneration
         this.woundGeneration = _gameConfig.woundsChoice || new LinesGenerator(new MessyGarbage())
         this.woundGeneration.Seed(seed)
         this.cheeseChoice = _gameConfig.cheeseChoice || new LinesGenerator(new MessyGarbage())
@@ -170,11 +172,11 @@ export class gameManager{
                     break;
                 case Command.SpawnGarbage:
                     if(!_gameConfig.debug)break;
-                    this.WriteGarbageToBoard(1);
+                    this.WriteGarbageToBoard(this.garbageGeneration,1);
                     break;
                 case Command.SpawnGarbage4:
                     if(!_gameConfig.debug)break;
-                    this.WriteGarbageToBoard(20);
+                    this.WriteGarbageToBoard(this.garbageGeneration,20);
                     break;
                 case Command.SpawnWound:
                     if(!_gameConfig.debug)break;
@@ -193,6 +195,9 @@ export class gameManager{
 
         this.movementManager.onLock.push((lockReport:lockReport)=>{
             this.OnLock(lockReport);
+        });
+        this.movementManager.onLockLike.push((pieceless:true)=>{
+            this.OnLockLike(pieceless);
         });
     }
 
@@ -260,7 +265,7 @@ export class gameManager{
     lastClearedWarlock = "";
 
     ComboAdjacent(piecejustplaced:piece,lines:number,spin:boolean,mini:boolean,immobile:boolean){
-        var pc = this.board.matrix.PerfectClear();
+        var pc = this.board.matrix.VirtualPC();
         var combobreak = false, b2bbreak = false
         
         if(lines <= 0){
@@ -482,7 +487,7 @@ export class gameManager{
     }
 
     CalculateAttack(piecejustplaced:piece,lines:number,spin:boolean,mini:boolean,immobile:boolean){
-        var pc = this.board.matrix.PerfectClear();
+        var pc = this.board.matrix.VirtualPC();
         var rawattack = 0
         //if(lines > 6)
         //    lines = 5
@@ -500,7 +505,7 @@ export class gameManager{
     }
 
     CalculateScore(piecejustplaced:piece,lines:number,spin:boolean,mini:boolean,immobile:boolean){
-        var pc = this.board.matrix.PerfectClear();
+        var pc = this.board.matrix.VirtualPC();
         var score = 0
         //if(lines > 6)
         //    lines = 5
@@ -516,15 +521,24 @@ export class gameManager{
     lineclearare = false;
     initialare = 0;
 
+    /**doesnt require a piece to actually lock but it acts like youre moving on to the next piece*/
+    OnLockLike(pieceless:boolean){
+        this.board.activepiece = undefined;
+        this.holdsused = 0;
+        this.game.pieces++;
+        this.areelapsed = 0;
+        if(pieceless){
+            this.areelapsed -= this.game.gameConfig.voidare
+        }
+    }
+
     OnLock(lr:lockReport){
         if(!this.board.activepiece)
             throw new Error("?")
 
         const piecejustplaced = clone(this.board.activepiece); // keep track of piece
         const justplacedlocation = this.board.activeposition;
-        this.board.activepiece = undefined; //some housekeeping stuff
-        this.holdsused = 0;
-        this.areelapsed = 0;
+        this.OnLockLike(false) //some housekeeping stuff
 
         if(lr.gimmickReport.lock)
             this.areelapsed -= this.game.gameConfig.earlylockare
@@ -543,7 +557,7 @@ export class gameManager{
             this.movementManager.clutcheligible = true;
         }
         
-        this.game.pieces++; //gamestate and score related stuff
+        //gamestate and score related stuff
         this.game.lines += lines;
         this.game.dig += dig;
         if (this.game.gameConfig.levelling === levelling.nes){
@@ -555,6 +569,18 @@ export class gameManager{
                 code:"pc",
             })
             this.game.pc++;
+        }else if(this.board.matrix.VirtualPC()){
+            this.game.flags.otheralerts.push({
+                time:0,
+                code:"generic",
+                info:{
+                    text:"virtual pc",
+                    colour:new colour3(1,0,1)
+                },
+            })
+            this.game.pc++;
+            if(this.game.gameConfig.vpcclearsall)
+                this.board.matrix.ClearPerfect()
         }
 
         this.game.flags.lineclearalerts.push({ //tell renderer we linecleared so they can draw the thing
@@ -602,7 +628,7 @@ export class gameManager{
         if(!this.board.activepiece) return false
         const nextpiece = this.queue[0]
         if(!nextpiece) return false
-        const slR = this.movementManager.SpawnLocation(nextpiece)
+        const slR = this.movementManager.SpawnLocation(nextpiece,false)
         if(slR.dies)
             return true
         for (const offj of slR.piece.tileoffsets){
@@ -622,16 +648,17 @@ export class gameManager{
 
     garbagebuffer:garbagePacket[]=[];
     currentpacket:garbagePacket|undefined;
+    currentgenerator:BaseGarbageGenerator;
     iscut = false;
     garbageelapsed:number=0;
     garbageswitch=false;
 
-    WriteGarbageToBoard(numberlines:number,dontreset=false){
+    WriteGarbageToBoard(generator:BaseGarbageGenerator,numberlines:number,dontreset=false){
         if(!dontreset){
-            this.garbageGeneration.Reset(this.garbageswitch);
+            generator.Reset(this.garbageswitch);
             this.garbageswitch = !this.garbageswitch
         }
-        this.garbageGeneration.Write(this.board,this.game.gameConfig.garbageType,numberlines)
+        generator.Write(this.board,this.game.gameConfig.garbageType,numberlines)
         while(this.board.activepiece && !this.movementManager.ValidShift(vector2.zero,this.board.activepiece,this.board.activeposition))
             this.board.activeposition = this.board.activeposition.add(vector2.up)
     }
@@ -646,7 +673,11 @@ export class gameManager{
                 this.currentpacket = this.garbagebuffer.shift() as garbagePacket
                 this.currentpacket.ripen = this.game.gameConfig.garbageare
                 if(!this.iscut){
-                    this.garbageGeneration.Reset(this.garbageswitch)
+                    if(this.currentpacket.generator)
+                        this.currentgenerator = this.currentpacket.generator
+                    else
+                        this.currentgenerator = this.garbageGeneration
+                    this.currentgenerator.Reset(this.garbageswitch)
                     this.garbageswitch = !this.garbageswitch
                 }
             }
@@ -658,7 +689,7 @@ export class gameManager{
         while(this.garbageelapsed >= this.game.gameConfig.garbageare){
             this.garbageelapsed -= this.game.gameConfig.garbageare;
 
-            this.WriteGarbageToBoard(1,true)
+            this.WriteGarbageToBoard(this.currentgenerator,1,true)
 
             this.currentpacket.lines--;
             if(this.currentpacket.lines <= 0){
@@ -672,7 +703,11 @@ export class gameManager{
                 else{
 
                     if(!this.currentpacket.cut){
-                        this.garbageGeneration.Reset(this.garbageswitch)
+                        if(this.currentpacket.generator)
+                            this.currentgenerator = this.currentpacket.generator
+                        else
+                            this.currentgenerator = this.garbageGeneration
+                        this.currentgenerator.Reset(this.garbageswitch)
                         this.garbageswitch = !this.garbageswitch
                         this.garbageelapsed -= this.game.gameConfig.garbagepacketare;
                     }
@@ -686,7 +721,7 @@ export class gameManager{
 
     WriteWoundToBoard(numberlines:number){
         if(this.board.activepiece){
-            var upshift = Math.max(0,numberlines - (-this.movementManager.DropHeight(vector2.down,this.board.activepiece,this.board.activeposition).y))
+            var upshift = Math.max(0,numberlines - (-this.movementManager.DropHeight(this.board.activepiece,this.board.activeposition).y))
             this.board.activeposition = this.board.activeposition.add(vector2.up.mul(upshift));
         }
 

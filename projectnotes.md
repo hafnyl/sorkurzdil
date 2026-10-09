@@ -40,7 +40,15 @@ halfway done
 - level select
     - make level select more beautiful
     
+things to add 2
+
+- might store rows of the matrix in arrays of arrays as an optimisation for looking for rows (does this even save that much computation)
+    - if i want to store columns as well its probably going to be hard to maintain
+
 things to add
+- multiple "active pieces" its probably more like instantiated pieces because they dont actually become the active piece until you place your active piece
+    - this is only interesting with the rotating board thing
+
 - xspin ospin
     - i forgot whether i have a function to check for spin on arbitrary piece probably not i dont want to check right now
 

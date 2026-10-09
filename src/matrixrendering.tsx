@@ -75,46 +75,19 @@ export default class MatrixRendering {
         return ((drawnMatrixHeight - 1) / 2 + extraheight) * this.boardtilesize.y;
     }
 
-    /*//im a big nonbinarygenderedindividual now i can handle rotation by myself
-    RotateRectangle(start:vector2,size:vector2,theta:number){
-        var end = start.add(size);
-        start = start.rotateAngle(theta);
-        end = end.rotateAngle(theta);
-
-        start = new vector2(Math.floor(start.x) + 0.5,Math.floor(start.y) + 0.5)
-        end = new vector2(Math.floor(end.x) + 0.5,Math.floor(end.y) + 0.5)
-
-        size = end.sub(start);
-        size = size.rotateAngle(-theta);
-
-        return [start,size]
-    }
-
-    DrawRectangle(start:vector2,size:vector2){
-        this.ctx.resetTransform();
-
-        this.ctx.translate(this.matrixorigin.x,this.matrixorigin.y);
-        const [rotatedstart,rotatedsize] = this.RotateRectangle(start,size,this.matrixangle);
-        this.ctx.translate(rotatedstart.x,rotatedstart.y);
-        this.ctx.rotate(this.matrixangle);
-
-        this.ctx.fillRect(
-            0,
-            0,
-            rotatedsize.x,
-            rotatedsize.y,
-        )
-    }*/ // :(
-
     cullline = 0;
 
-    FillRect(start:vector2,size:vector2,zoom=this.matrixzoom,bypassboardoffset=true){
+    FillRect(start:vector2,size:vector2,zoom=this.matrixzoom,bypassboardoffset=true,garbageculling=false){
         if(!bypassboardoffset){
             start = new vector2(start.x,start.y - this.boardtilesize.y * this.board.yoffset)
-            if(start.y > this.cullline)
+            var uselowercull = this.cullline
+            if(!garbageculling){
+                uselowercull = this.CoordsToScreenPos(vector2.up.mul(this.board.matrix.lowvanishingpoint +0.5)).y
+            }
+            if(start.y > uselowercull)
                 return
-            if(start.y + size.y > this.cullline)
-                size = new vector2(size.x,this.cullline - start.y)
+            if(start.y + size.y > uselowercull)
+                size = new vector2(size.x,uselowercull - start.y)
         }
 
         if(zoom==1||zoom<=0){
@@ -141,7 +114,7 @@ export default class MatrixRendering {
         )
     }
 
-    DrawSquare(_tileModel:tileModel,screenpos:vector2,zoom=this.matrixzoom,bypassboardoffset=true,tilesize=this.boardtilesize){
+    DrawSquare(_tileModel:tileModel,screenpos:vector2,zoom=this.matrixzoom,bypassboardoffset=true,garbageculling=false,tilesize=this.boardtilesize){
         if (_tileModel.isNull)
             return;
 
@@ -153,7 +126,7 @@ export default class MatrixRendering {
             
             const start = screenpos.sub(tilesize.div(2)).add(this.FSTL(rect.position,tilesize));
             const size = this.FSTL(rect.size,tilesize);
-            this.FillRect(start,size,zoom,bypassboardoffset);
+            this.FillRect(start,size,zoom,bypassboardoffset,garbageculling);
         }
         /**for(const imageRect of _tileModel.images){
             const imageName = imageRect.image;
@@ -211,17 +184,20 @@ export default class MatrixRendering {
             _tileModel = _tileModel.withOpacity(1 - Math.min(1,deadFor / (this.game.gameConfig.lineclearare + this.game.gameConfig.linecleartime - (this.gameManager.lineclearare ? this.gameManager.initialare : 0))));
         }
 
-        this.DrawSquare(_tileModel,screenpos,this.matrixzoom,bypassboardoffset);
+        this.DrawSquare(_tileModel,screenpos,this.matrixzoom,bypassboardoffset,_tile.isGarbage);
     }
 
     Danger():[number,string]{
         const activebounds = this.board.activepiece?.bounds || new vector2(0,2)
         const nextbounds = this.gameManager.queue[0]?.bounds || new vector2(0,2)
         const holdbounds = this.gameManager.hold[0]?.bounds || new vector2(0,0)
-        var danger = this.board.matrix.GetEffectiveHeight() - this.board.matrix.height + Math.max(activebounds.x,activebounds.y) + Math.floor(Math.max(nextbounds.y,holdbounds.y)/2-0.5) + 1
+        var danger = this.board.matrix.Extents().north + 1 - this.board.matrix.height + Math.max(activebounds.x,activebounds.y) + Math.floor(Math.max(nextbounds.y,holdbounds.y)/2-0.5) + 1
         var dangercolour = palette.two.toHex()
 
-        if(this.board.activepiece && this.gameManager.PlacementCouldKill(this.gameManager.movementManager.DropHeight(vector2.down,this.board.activepiece,this.board.activeposition))){
+        if(this.board.activepiece
+            && !this.gameManager.movementManager.OverVoid()
+            && this.gameManager.PlacementCouldKill(this.gameManager.movementManager.DropHeight(this.board.activepiece,this.board.activeposition))
+        ){
             dangercolour = palette.tri.toHex()
             danger *= 3
         }
@@ -259,7 +235,7 @@ export default class MatrixRendering {
     }
 
     DrawMatrix(){
-        const nonempties = this.board.matrix.GetNonNullPositions()
+        const nonempties = this.board.matrix.GetAllRenderablePositions()
 
         for(let i=0; i<nonempties.length; i++){
             const coords = nonempties[i];
@@ -273,7 +249,7 @@ export default class MatrixRendering {
         _tileModel = _tileModel || piece.tileModel;
         for (let i=0; i<piece.tileoffsets.length; i++){
             const offset = piece.tileoffsets[i];
-            this.DrawSquare(_tileModel,screenpos.add(flipy(this.FSTL2(offset,tilesize))),zoom,bypassboardoffset,tilesize)
+            this.DrawSquare(_tileModel,screenpos.add(flipy(this.FSTL2(offset,tilesize))),zoom,bypassboardoffset,false,tilesize)
         }
 
         if(!showCOR||!this.game.gameConfig.allowRotation)return;
@@ -342,7 +318,8 @@ export default class MatrixRendering {
 
     DrawGhost(){
         if(!this.board.activepiece) return;
-        let landpos =this.board.activeposition.add(this.gameManager.movementManager.DropHeight(vector2.down,this.board.activepiece,this.board.activeposition));
+        if(this.gameManager.movementManager.OverVoid()) return
+        let landpos =this.board.activeposition.add(this.gameManager.movementManager.DropHeight(this.board.activepiece,this.board.activeposition));
         let ghostModel = this.board.activepiece.tileModel.withOpacity(this.game.userConfig.ghostOpacity);
         this.DrawPiece(this.board.activepiece,
             this.CoordsToScreenPos(landpos),
@@ -570,7 +547,7 @@ export default class MatrixRendering {
                 }
                 case cameraMode.focusGhost:{
                     if(!this.board.activepiece) break
-                    let trackpos = this.board.activeposition.add(this.gameManager.movementManager.DropHeight(vector2.down,this.board.activepiece,this.board.activeposition));
+                    let trackpos = this.board.activeposition.add(this.gameManager.movementManager.DropHeight(this.board.activepiece,this.board.activeposition));
                     let top = trackpos.y;
                     let bottom = Math.max(trackpos.y - this.board.spawnlocation.y / 2,0);
                     if(this.cameraYtarget > top)
@@ -582,10 +559,10 @@ export default class MatrixRendering {
                 }
                 case cameraMode.focusWholeBoard:
                     if(this.board.matrix.height > 0)
-                        this.targetzoom = Math.min(1,this.board.matrix.height/this.board.matrix.GetEffectiveHeight())
+                        this.targetzoom = Math.min(1,this.board.matrix.height/this.board.matrix.Extents().north + 1)
                     else
                         throw new Error("amazing edge case you get an achievement for finding this")
-                    this.cameraYtarget = Math.max(0,(this.board.matrix.GetEffectiveHeight() - this.board.matrix.height) / 2 * this.targetzoom)
+                    this.cameraYtarget = Math.max(0,(this.board.matrix.Extents().north + 1 - this.board.matrix.height) / 2 * this.targetzoom)
                     break
                 case cameraMode.fixed:
                     this.cameraYtarget = 0;

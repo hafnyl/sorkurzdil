@@ -1,5 +1,5 @@
 import { clone, formatTime, formatTimeSmall, modular, Randomiser, vector2, weightedRoundoff } from './basics.ts'
-import { board, tile, tileType } from './board.ts';
+import { board, boundstype, tile, tileType } from './board.ts';
 import rs, { kickSystems, kickType, simplifyKickType } from './rotationsystems.ts';
 import { game } from './sorkurzdil.ts';
 import { ExplodeGrenades, gimmick, MarkBombClears } from './gimmicks.ts';
@@ -121,9 +121,11 @@ export class garbagePacket{
     ripen=0;
     used=false;
     cut=false;
-    constructor(lines:number){
+    generator?:BaseGarbageGenerator;
+    constructor(lines:number,generator?:BaseGarbageGenerator){
         this.lines = lines;
         this.maxlines = lines;
+        this.generator = generator
     }
 }
 
@@ -388,6 +390,18 @@ export class gameConfig{
 
     twoplayer = false;
     swapplayerare = 750;
+
+    boundstype=boundstype.normal;
+    boundlessretainboundedkicksbounded=true; // if the boundstype lets you go past the left and right, but the piece is still within bounds, on rotation you can kick off of the walls
+    boundlessdropsusefloorbounded=true; // if boundstype lets you fall into the void within the walls of the matrix, sonic dropping and harddropping would keep you in bounds (but not softdropping)
+    voiddeath = true; // you lose if you drop your piece into the void
+    voidare = 750; // are increase after dropping a piece into the void
+    vpcclearsall = true; // performing a pc within the bounds when there are still items outside of bounds will clear the items that are out of bounds (i added this because some tiles are unclearable when youre allowed to place pieces level with the floor or below)
+    extendclearxrequirement = true; // if boundstype lets you go past the walls you dont rely on going wall to wall for clearing lines, instead you just check the furthest tiles to the left and to the right
+
+    extendheight = -1; // how high above the height youre allowed to place pieces / youre allowed to move pieces into (-1 is infinite)
+    lowvanishingpoint = 2; // how low below 0 youre allowed to place pieces before they get visually cut off or its counted as falling into the void
+    dynamicvanishingpoint = false; // start measuring low vanishing point from the lowest tile
 
     simplescoring:simplescoring = simpleScoringSystems.guideline;
     levelscore = true;

@@ -19,6 +19,13 @@ export const CORoffsets = {
   [simpleKickType.O]:new vector2(0.5,0.5),
 }
 
+export type uncenteredRectangle = {
+  north:number,
+  east:number,
+  south:number,
+  west:number,
+}
+
 export class piece{
   name:string;
   id:string;
@@ -158,15 +165,12 @@ export class piece{
   //things to use when hardcoding pieces
   /**current size of the bounding rectangle of the piece */
   get bounds(){
-    var [northeast,southwest] = this.boundingrectangle
-
-    const _bounds = northeast.sub(southwest).add(vector2.one)
-    
-    return _bounds
+    var bounding = this.boundingrectangle
+    return new vector2(bounding.east - bounding.west + 1,bounding.north - bounding.south + 1)
   }
 
   /**northeast and southwest points of the bounding rectangle of the piece relative to the center of rotation*/
-  get boundingrectangle(){
+  get boundingrectangle():uncenteredRectangle{
     var northeast = this.tileoffsets[0]
     var southwest = this.tileoffsets[0]
 
@@ -174,7 +178,12 @@ export class piece{
       northeast = new vector2(Math.max(northeast.x,i.x),Math.max(northeast.y,i.y))
       southwest = new vector2(Math.min(southwest.x,i.x),Math.min(southwest.y,i.y))
     }
-    return [northeast,southwest]
+    return {
+      north:northeast.y,
+      east:northeast.x,
+      south:southwest.y,
+      west:southwest.x,
+    }
   }
 
   static fromString(id:string,tilepicture:string,tileModel:tileModel,name:string=id,_kickType=kickType.auto){
@@ -190,9 +199,9 @@ export class piece{
       }
     }
 
-    const [northeast, southwest] = robot.boundingrectangle
+    const bounding = robot.boundingrectangle
 
-    const origin = new vector2(Math.floor((northeast.x + southwest.x)/2),Math.floor((northeast.y + southwest.y)/2))
+    const origin = new vector2(Math.floor((bounding.east + bounding.west)/2),Math.floor((bounding.north + bounding.south)/2))
     for (let i = 0; i < robot.tileoffsets.length; i++) {
       robot.tileoffsets[i] = robot.tileoffsets[i].sub(origin)
     }

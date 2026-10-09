@@ -24,9 +24,10 @@ export type gimmick=(_board:board,_game:game)=>gimmickReport;
 
 function ClearLine(_board:board,y:number){
     for(let x=0; x<_board.matrix.width; x++){
-        let i = new vector2(x,y);
-        if(!_board.matrix.array[i.x][i.y]) continue
-        _board.matrix.array[i.x][i.y].death = Date.now();
+        const i = new vector2(x,y);
+        const _tile = _board.matrix.GetTile(i)
+        if(!_tile) continue
+        _tile.death = Date.now();
     };
 }
 
@@ -73,7 +74,7 @@ export function MarkBombClears(_board:board,_game:game):gimmickReport{
 export function ExplodeGrenades(_board:board,_game:game):gimmickReport{
     const _gimmickReport = new gimmickReport();
     const destruction:vector2[]=[];
-    for(const i of _board.matrix.GetNonNullPositions()){
+    for(const i of _board.matrix.GetAllRenderablePositions()){
         const _tile = _board.matrix.GetTile(i)
         if(!_tile) continue;
         if(_tile.tileType == tileType.grenade){

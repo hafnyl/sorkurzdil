@@ -1,5 +1,5 @@
 import { clone, colour3, vector2 } from "./basics.ts"
-import { board, tile, tileType } from "./board.ts";
+import { board, boundstype, tile, tileType } from "./board.ts";
 import { alignYType, Command, gameConfig, simpleScoringSystems, spinDetection, userConfig } from "./config.ts";
 import { gimmickReport } from "./gimmicks.ts";
 import InputManager from "./inputmanager.ts";
@@ -42,6 +42,7 @@ export default class MovementManager{
     lockharddropdebounce = 0;
 
     onLock:((lockReport:lockReport)=>void)[]=[];
+    onLockLike:((pieceless:true)=>void)[]=[];
 
     constructor(_game:game,board:board){
         this.game = _game;
@@ -68,6 +69,10 @@ export default class MovementManager{
                     this.Move(vector2.up);
                     break;
                 case Command.SonicDrop:
+                    if(this.OverVoid()){
+                        this.LockLike()
+                        break
+                    }
                     var drop = this.SonicDrop();
                     if(this.game.gameConfig.simplescoring === simpleScoringSystems.guideline)
                         this.game.score += Math.floor(drop * 1.5);
@@ -81,6 +86,10 @@ export default class MovementManager{
                 case Command.HardDrop:
                     if(!this.game.gameConfig.allowHardDrop) break
                     if(this.lockharddropdebounce < this.game.userConfig.lockharddropdebounce) break
+                    if(this.OverVoid()){
+                        this.LockLike()
+                        break
+                    }
                     var drop = this.SonicDrop(true);
                     if(this.game.gameConfig.simplescoring === simpleScoringSystems.guideline)
                         this.game.score += drop * 2;
@@ -114,7 +123,8 @@ export default class MovementManager{
         })
     }
 
-    Noncolliding(shift:vector2,_piece:piece,position:vector2){
+    PieceNoncolliding(shift:vector2,_piece:piece,position:vector2,_boundstype:boundstype=this.board.boundstype){
+        if(!this.PieceInBounds(shift,_piece,position,_boundstype)) return false
         for (let i=0; i<_piece.tileoffsets.length; i++){
             const offset = _piece.tileoffsets[i];
             if(!this.board.matrix.IsValid(position.add(offset).add(shift))){
@@ -124,30 +134,30 @@ export default class MovementManager{
         return true;
     }
 
-    StrictlyInBounds(shift:vector2,_piece:piece,position:vector2){
+    PieceStrictlyInBounds(shift:vector2,_piece:piece,position:vector2,_boundstype:boundstype=this.board.boundstype){
         for (let i=0; i<_piece.tileoffsets.length; i++){
             const offset = _piece.tileoffsets[i];
-            if(!this.board.matrix.StrictlyInBounds(position.add(offset).add(shift)))
+            if(!this.board.InMatrix(position.add(offset).add(shift)))
                 return false;
         }
         return true;
     }
 
-    InBounds(shift:vector2,_piece:piece,position:vector2){
+    PieceInBounds(shift:vector2,_piece:piece,position:vector2,_boundstype:boundstype=this.board.boundstype){
         for (let i=0; i<_piece.tileoffsets.length; i++){
             const offset = _piece.tileoffsets[i];
-            if(!this.board.matrix.InBounds(position.add(offset).add(shift)))
+            if(!this.board.InBounds(position.add(offset).add(shift),_boundstype))
                 return false;
         }
         return true;
     }
 
     /**switches between valid placement and in bounds based on active piece phasing*/
-    ValidShift(shift:vector2,_piece:piece,position:vector2){
+    ValidShift(shift:vector2,_piece:piece,position:vector2,_boundstype:boundstype=this.board.boundstype){
         if(this.game.gameConfig.activepiecephasethroughblocks)
-            return this.InBounds(shift,_piece,position);
+            return this.PieceInBounds(shift,_piece,position,_boundstype);
         else
-            return this.Noncolliding(shift,_piece,position);
+            return this.PieceNoncolliding(shift,_piece,position,_boundstype);
     }
 
     Grounded(){
@@ -164,31 +174,34 @@ export default class MovementManager{
      * 
      * this uses placement checking so you can use it with harddrop
     */
-    DropHeight(dropdirection=vector2.down,_piece:piece,position:vector2){
-        if(!this.board.activepiece)
-            return vector2.zero;
-
+    DropHeight(_piece:piece,position:vector2,dropdirection=vector2.down,_boundstype:boundstype=this.board.boundstype):vector2{
         let dropHeight = vector2.zero;
         let exhaust = 0
-        while(this.Noncolliding(dropHeight.add(dropdirection),_piece,position) && this.InBounds(dropHeight.add(dropdirection),_piece,position)){
+
+        var usebounds = this.board.boundstype
+        if((this.board.boundstype !== boundstype.normal) && this.game.gameConfig.boundlessdropsusefloorbounded && this.PieceInBounds(vector2.zero,_piece,position,boundstype.normal))
+            usebounds = boundstype.normal;
+
+        while(this.PieceNoncolliding(dropHeight.add(dropdirection),_piece,position,usebounds) && this.PieceInBounds(dropHeight.add(dropdirection),_piece,position,usebounds)){
             dropHeight = dropHeight.add(dropdirection);
             
-            exhaust++;
-            if(exhaust > 3000){
-                throw new Error("your took too long");
-            }
+            if(dropHeight.sqMag() > (this.board.matrix.width * this.board.matrix.height)**2)
+                return new vector2(0,Number.NEGATIVE_INFINITY)
+            if(dropHeight.add(position).y + _piece.boundingrectangle.north <= this.board.matrix.lowvanishingpoint)
+                return new vector2(0,Number.NEGATIVE_INFINITY)
+
+            exhaust++
+            if(exhaust > 3000000)
+                throw new Error("your taken too long")
         }
         return dropHeight;
     }
 
-    ValidPiece(_piece:piece,shift:vector2=vector2.zero,position:vector2){
-        for (const offset of _piece.tileoffsets){
-            if(this.game.gameConfig.activepiecephasethroughblocks && !this.board.matrix.InBounds(position.add(offset).add(shift)))
-                return false
-            if(!this.game.gameConfig.activepiecephasethroughblocks && !this.board.matrix.IsValid(position.add(offset).add(shift)))
-                return false;
-        }
-        return true;
+    OverVoid():boolean{
+        if(!this.board.activepiece)
+            return false
+
+        return !isFinite(this.DropHeight(this.board.activepiece,this.board.activeposition).y)
     }
 
     //piece movement
@@ -200,10 +213,10 @@ export default class MovementManager{
         return true;
     }
 
-    AttemptShift(shift:vector2){
+    AttemptShift(shift:vector2,_boundstype=this.board.boundstype){
         if(!this.board.activepiece)
             return false
-        if(!this.ValidShift(shift,this.board.activepiece,this.board.activeposition))
+        if(!this.ValidShift(shift,this.board.activepiece,this.board.activeposition,_boundstype))
             return false
         this.board.activeposition = this.board.activeposition.add(shift);
         return true
@@ -240,15 +253,32 @@ export default class MovementManager{
         if(!this.board.activepiece)
             return 0
 
+        if(this.OverVoid())
+            return Number.POSITIVE_INFINITY
+
+        var usebounds = this.board.boundstype
+        if((this.board.boundstype !== boundstype.normal) && this.game.gameConfig.boundlessdropsusefloorbounded && this.PieceInBounds(vector2.zero,this.board.activepiece,this.board.activeposition,boundstype.normal))
+            usebounds = boundstype.normal;
+
         var dropHeight = 0
         while(true){
-            const success = this.AttemptShift(vector2.down)
+            const success = this.AttemptShift(vector2.down,usebounds)
             const earlylock = this.EvaluateEarlyLockGimmicks()
             if(!success) break
             if(earlylock){
                 this.Lock(this.ValidShift(vector2.down,this.board.activepiece,this.board.activeposition) || !lockintent);
                 break
             }
+
+            if(dropHeight > (this.board.matrix.width * this.board.matrix.height)**2){
+                this.LockLike()
+                return dropHeight
+            }
+            if(dropHeight + this.board.activeposition.y + this.board.activepiece.boundingrectangle.north <= this.board.matrix.lowvanishingpoint){
+                this.LockLike()
+                return dropHeight
+            }
+
             dropHeight += 1
         }
         
@@ -276,7 +306,7 @@ export default class MovementManager{
     AttemptLodge(_piece:piece,position:vector2,flipdirection=false):movementReport{
         for(const ir of this.game.gameConfig.lodges){
             const i = flipdirection ? ir.hadamard(new vector2(-1,1)) : ir;
-            if(!this.ValidPiece(_piece,i,position)) continue
+            if(!this.ValidShift(i,_piece,position)) continue
 
             const [spin,mini,immobile] = this.SpinDetection(this.board.activeposition.add(i))
             if(spin || mini || immobile){
@@ -327,6 +357,10 @@ export default class MovementManager{
         turns = ((_piece.orientiation + turns) % _piece.symmetry) - _piece.orientiation
         turns = (turns + 4) % 4
 
+        var usebounds = this.board.boundstype
+        if((this.board.boundstype !== boundstype.normal) && this.game.gameConfig.boundlessretainboundedkicksbounded && this.PieceInBounds(vector2.zero,_piece,position,boundstype.normal))
+            usebounds = boundstype.normal;
+
         let rotatedPiece = _piece.rotated(turns)
 
         const fromRot = _piece.orientiation;
@@ -342,7 +376,7 @@ export default class MovementManager{
                     successful:false
                 }
 
-            if(this.ValidPiece(rotatedPiece,shift,position)){
+            if(this.ValidShift(shift,rotatedPiece,position,usebounds)){
                 position = position.add(shift);
                 
                 if(i == 1)
@@ -402,7 +436,7 @@ export default class MovementManager{
                     successful:false
                 }
 
-            if(this.ValidPiece(rotatedPiece,shift,position)){
+            if(this.ValidShift(shift,rotatedPiece,position)){
                 return {
                     piece:rotatedPiece,
                     position:position.add(shift),
@@ -426,16 +460,25 @@ export default class MovementManager{
     }
 
     EvaluateDAS(command:Command,deltaTime:number){
+        if(!this.board.activepiece)
+            return
+
         let direction = vector2.right;
         if(command==Command.ShiftLeft)
             direction = vector2.left;
         
         const zero = this.game.inputManager.Held(command);
         const t = Date.now() - zero;
-        var deltaSteps = this.FDAS(t) - this.FDAS(t-deltaTime);
+        const fdasref = this.FDAS(t)
+        var deltaSteps = fdasref - this.FDAS(t-deltaTime);
 
-        if(this.FDAS(t) === Number.POSITIVE_INFINITY)
-            deltaSteps = this.game.gameConfig.width;
+        if(!isFinite(fdasref))
+            deltaSteps = this.board.matrix.width
+
+        if(command==Command.ShiftLeft)
+            deltaSteps = Math.max(0,Math.min(deltaSteps,this.board.activeposition.x + this.board.activepiece.boundingrectangle.west))
+        else
+            deltaSteps = Math.max(0,Math.min(deltaSteps,this.board.matrix.width - this.board.activeposition.x - this.board.activepiece.boundingrectangle.east - 1))
 
         if(this.Grounded()) // compensate for soft drop if it didnt do that this frame (because it was grounded)
             if(this.game.inputManager.Held(Command.SoftDrop))
@@ -465,7 +508,7 @@ export default class MovementManager{
         var dies = false
         var clutches = false
         var bounds = _piece.bounds
-        var [northeast,southwest] = spawnpiece.boundingrectangle
+        var bounding = spawnpiece.boundingrectangle
         
 
         if(bounds.x > this.board.matrix.width){
@@ -476,8 +519,10 @@ export default class MovementManager{
             spawnpiece = rotationreport.piece
             spawnlocation = rotationreport.position
             bounds = spawnpiece.bounds;
-            [northeast,southwest] = spawnpiece.boundingrectangle
+            bounding = spawnpiece.boundingrectangle
         }
+
+        var northeast = new vector2(bounding.east,bounding.north), southwest = new vector2(bounding.west,bounding.south)
 
         switch(this.game.gameConfig.spawnAlignY){
             case alignYType.top:
@@ -510,7 +555,7 @@ export default class MovementManager{
                 while(!this.Leeway(usemargin,spawnpiece,spawnlocation))
                     spawnlocation = spawnlocation.add(vector2.up);
             else{
-                const aboveboard = this.board.matrix.GetEffectiveHeight() + usemargin
+                const aboveboard = this.board.matrix.Extents().north + 1 + usemargin
                 spawnlocation = new vector2(
                     spawnlocation.x,
                     Math.max(spawnlocation.y,aboveboard)
@@ -568,7 +613,7 @@ export default class MovementManager{
         var immobile = true;
 
         for(const offset of [vector2.up,vector2.down,vector2.left,vector2.right])
-            if (this.ValidPiece(_piece,offset,position)){
+            if (this.ValidShift(offset,_piece,position)){
                 immobile = false
                 break
             }
@@ -690,12 +735,27 @@ export default class MovementManager{
         }
     }
 
+    /**this function just makes the piece disappear 
+     * 
+     * currently only used when the piece falls into the void
+    */
+    LockLike(){
+        if(this.game.gameConfig.voiddeath){
+            this.game.gameOver = true;
+            this.board.matrix.Die();
+        }
+
+        for(const call of this.onLockLike){
+            call(true)
+        }
+    }
+
     Lock(earlylock=false){
         if(!this.board.activepiece)
             return
-        if(!this.Noncolliding(vector2.zero,this.board.activepiece,this.board.activeposition) || !this.InBounds(vector2.zero,this.board.activepiece,this.board.activeposition))
+        if(!this.PieceNoncolliding(vector2.zero,this.board.activepiece,this.board.activeposition) || !this.PieceInBounds(vector2.zero,this.board.activepiece,this.board.activeposition))
             return
-        if(this.game.gameConfig.verticallineclears && !this.StrictlyInBounds(vector2.zero,this.board.activepiece,this.board.activeposition))
+        if(this.game.gameConfig.verticallineclears && !this.PieceStrictlyInBounds(vector2.zero,this.board.activepiece,this.board.activeposition))
             return
 
         this.clutcheligible = false
@@ -800,15 +860,21 @@ export default class MovementManager{
 
         console.log(displacement)
 
-        if(!isFinite(displacement) || isNaN(displacement))
-            displacement = -this.DropHeight(vector2.down,this.board.activepiece,this.board.activeposition).y * this.game.gameConfig.gravity;
+        if(!isFinite(displacement) || isNaN(displacement)){
+            if(this.OverVoid()){
+                this.LockLike()
+                delete this.game.inputManager.heldKeys[Command.SoftDrop]
+                return
+            }
+            displacement = -this.DropHeight(this.board.activepiece,this.board.activeposition).y * this.game.gameConfig.gravity;
+        }
             
         this.gravityelapsed += displacement * deltaTime;
 
         if(this.game.gameConfig.gravity !== 0)
             this.game.flags.nongravitydisplacementthisframe = this.game.flags.nongravitydisplacementthisframe.add(vector2.down.mul(displacement / this.game.gameConfig.gravity));
         else
-            this.game.flags.nongravitydisplacementthisframe = this.game.flags.nongravitydisplacementthisframe.add(this.DropHeight(vector2.down,this.board.activepiece,this.board.activeposition));
+            this.game.flags.nongravitydisplacementthisframe = this.game.flags.nongravitydisplacementthisframe.add(this.DropHeight(this.board.activepiece,this.board.activeposition));
     }
 
     WhileInAir(deltaTime:number){
@@ -838,5 +904,8 @@ export default class MovementManager{
         }else{
             this.WhileInAir(deltaTime);
         }
+
+        if(this.board.activepiece && this.board.activeposition.y + this.board.activepiece.boundingrectangle.north <= this.board.matrix.lowvanishingpoint)
+            this.LockLike()
     }
 }
