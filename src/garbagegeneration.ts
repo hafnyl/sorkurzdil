@@ -1,7 +1,8 @@
 import { Randomiser, vector2 } from "./basics.ts";
 import { board, tile, tileType } from "./board.ts";
-import { BaseGarbageLineGenerator, dualGarbageType } from "./garbagelinetypes.ts";
+import { BaseLineGenerator, dualGarbageType } from "./garbagelinetypes.ts";
 import { BasePieceGenerator } from "./piecechoice.ts";
+import { piece } from "./pieces.ts";
 import { tileModels } from "./tilemodels.ts";
 
 export class BaseGarbageGenerator{
@@ -15,15 +16,22 @@ export class BaseGarbageGenerator{
         this.altskin = altskin
     }
 
-    Write(_board:board,_garbageType:dualGarbageType,numberlines:number){
+    SetGarbageTile(_board:board,_garbageType:dualGarbageType,coords:vector2){
+        const _tile = _garbageType(this.altskin)
+        _tile.birth = Date.now();
+        _tile.isGarbage = true;
+        _board.matrix.SetTile(coords,_tile)
+    }
+
+    Write(_board:board,_garbageType:dualGarbageType,numberlines:number,iscut:boolean){
         
     }
 }
 
 export class LinesGenerator extends BaseGarbageGenerator{
-    currentGenerator:BaseGarbageLineGenerator;
+    currentGenerator:BaseLineGenerator;
 
-    constructor(generator:BaseGarbageLineGenerator){
+    constructor(generator:BaseLineGenerator){
         super()
         this.currentGenerator = generator
     }
@@ -78,10 +86,7 @@ export class SpecklesGarbage extends BaseGarbageGenerator{
                 empty += 1
                 continue
             }
-            const _tile = _garbageType(this.altskin)
-            _tile.birth = Date.now();
-            _tile.isGarbage = true;
-            _board.matrix.SetTile(i,_tile)
+            this.SetGarbageTile(_board,_garbageType,i)
             break
         }
     }
@@ -107,6 +112,27 @@ export class SpecklesGarbage extends BaseGarbageGenerator{
     }
 }
 
+export class WidthGarbage extends BaseGarbageGenerator{
+    x:number|undefined=undefined;
+    y=0;
+
+    Reset(altskin: boolean): void {
+        this.altskin = altskin
+        this.x = undefined
+        this.y = 0
+    }
+
+    Write(_board:board,_garbageType:dualGarbageType,numberlines:number){
+        if(this.x === undefined)
+            this.x = (Math.random() < 0.5 ? _board.matrix.effectiveLeft - 2 : _board.matrix.effectiveRight + 1)
+
+        for (let i = 0; i < numberlines; i++) {
+            this.SetGarbageTile(_board,_garbageType,new vector2(this.x,this.y))
+            this.y++
+        }
+    }
+}
+
 /*export class DebrisGarbage extends BaseGarbageGenerator{
     pieceChoice:BasePieceGenerator
 
@@ -119,31 +145,54 @@ export class SpecklesGarbage extends BaseGarbageGenerator{
         this.pieceChoice.Seed(seed)
     }
 
-    Reset() {
-        
-    }
-
     LineEligible(_board:board,y:number):boolean{
         return _board.matrix.CountEmpties(y) > 1
     }
 
+    SetGarbagePiece(_board:board,_garbageType:dualGarbageType,_piece:piece,position:vector2){
+        for(const i of _piece.tileoffsets)
+            this.SetGarbageTile(_board,_garbageType,position.add(i))
+    }
+
+    DropPiece(){
+        
+    }
+
     Write(_board:board,_garbageType:dualGarbageType,numberlines:number){
         for (let i = 0; i < numberlines; i++) {
-            var y = -1;
-            var heightleft = this.height;
-            while(true){
-                y++
-                if(y>20000) throw new Error("how is this even possible to trigger")
-
-                if(!this.LineEligible(_board,y)) continue
-                if(this.randomiser.next() > 1 / heightleft){
-                    heightleft--;
-                    continue
-                }
-
-                this.AddSpeckle(_board,_garbageType,y)
-                break
-            }
+            this.DropPiece()
         }
     }
 }*/
+
+export class Decheese extends BaseGarbageGenerator{
+    cheese:BaseGarbageGenerator;
+    normal:BaseGarbageGenerator;
+    cheesethreshold:number;
+
+    constructor(cheese:BaseGarbageGenerator,normal:BaseGarbageGenerator,cheesethreshold:number = 1){
+        super()
+        this.cheese = cheese
+        this.normal = normal
+        this.cheesethreshold = cheesethreshold
+    }
+
+    Reset(altskin: boolean): void {
+        this.cumulativegarbage = 0
+        this.cheese.Reset(altskin)
+        this.normal.Reset(altskin)
+    }
+
+    cumulativegarbage=0;
+    Write(_board: board, _garbageType: dualGarbageType, numberlines: number, iscut: boolean): void {
+        this.cumulativegarbage++;
+        if(this.cumulativegarbage == this.cheesethreshold + 1)
+            this.normal.Write(_board,_garbageType,this.cumulativegarbage,iscut)
+        if(this.cumulativegarbage > this.cheesethreshold + 1)
+            this.normal.Write(_board,_garbageType,1,iscut)
+        if(this.cumulativegarbage <= this.cheesethreshold && !iscut)
+            this.cheese.Write(_board,_garbageType,this.cumulativegarbage,iscut)
+        if(!iscut)
+            this.cumulativegarbage = 0
+    }
+}

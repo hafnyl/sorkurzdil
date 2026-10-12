@@ -11,9 +11,9 @@ import configs from './configprefabs.ts'
 import { kickSystems } from './rotationsystems.ts';
 import TextDisplay from './debugu.tsx'
 import { boundstype, tile } from './board.ts';
-import { LinesGenerator, SpecklesGarbage } from './garbagegeneration.ts';
+import { BaseGarbageGenerator, Decheese, LinesGenerator as LinesGarbage, SpecklesGarbage, WidthGarbage } from './garbagegeneration.ts';
 import { AdhereToGlue } from './gimmicks.ts';
-import { Damnation, NwideGarbage, OneBlockGarbage, StraightGarbage } from './garbagelinetypes.ts';
+import { BaseLineGenerator, Damnation, MessyLines, NwideHolesLines, OneBlockLine, StraightsLines } from './garbagelinetypes.ts';
 import { BasePieceGenerator, Fool } from './piecechoice.ts';
 import { tileModels } from './tilemodels.ts';
 
@@ -42,10 +42,19 @@ _gameConfig.debug = true;
 //_gameConfig.pieceChoice = new BasePieceGenerator(bagprefabs.m123)
 //_gameConfig.pieceChoice = new BasePieceGenerator(bagprefabs.tetraplets)
 
-_gameConfig.boundstype = boundstype.tower
-_gameConfig.allowAirLock = true
+_gameConfig.boundstype = boundstype.wallless
+//_gameConfig.allowAirLock = true
+_gameConfig.vpcclearsall = false
 
-//_gameConfig.backfire = 1
+//_gameConfig.initialisegarbage = [
+//  new garbagePacket(4,new LinesGarbage(new MessyLines())),
+//  new garbagePacket(4,new LinesGarbage(new NwideHolesLines(3))),
+//  new garbagePacket(4),
+//]
+
+_gameConfig.garbageChoice = new Decheese(new WidthGarbage(),new LinesGarbage(new StraightsLines()), 1)
+
+_gameConfig.backfire = 1
 
 //_gameConfig.Splice(configs.m123)
 
@@ -120,13 +129,13 @@ _userConfig.keybinds = new keybinds(A);
 
 _userConfig.strideMode = true;
 
-var singleplayergame;
+var singleplayergame:gameManager|null;
 var inputManager = new InputManager(_userConfig);
 
 
-var starttime;
+var starttime:number;
 var latetime = Date.now()
-function Update(canvas:HTMLCanvasElement,timestamp,deltaTime){
+function Update(canvas:HTMLCanvasElement,timestamp:number,deltaTime:number){
 
   const ctx = canvas.getContext('2d')
   if(!ctx)
@@ -150,7 +159,7 @@ function App() {
   const [scene,setScene] = useState("mainmenu")
 
   function StartGame(debugus,gamemode?:gameConfig){
-    _gameConfig = gamemode||singleplayergame.gameConfig||new gameConfig()
+    _gameConfig = gamemode||(singleplayergame?.game.gameConfig)||new gameConfig()
 
     setScene("ingame")
     inputManager = new InputManager(_userConfig);

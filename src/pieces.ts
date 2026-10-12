@@ -194,7 +194,7 @@ export class piece{
       const row = rows[rows.length - y - 1];
       for (let x = 0; x < row.length; x++) {
         const element = row[x];
-        if(element === " ")continue
+        if(/[ \f\n\r\t\v\u00A0\u2028\u2029]/.test(element))continue
         robot.tileoffsets.push(new vector2(x,y))
       }
     }

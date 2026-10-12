@@ -5,7 +5,7 @@ import { bagprefabs } from "./pieces.ts";
 import { kickSystems } from "./rotationsystems.ts";
 import { constraints, missions, scorers } from "./config.ts";
 import { LinesGenerator } from "./garbagegeneration.ts";
-import { Bombs, Damnation, NwideGarbage } from "./garbagelinetypes.ts";
+import { Bombs, Damnation, NwideHolesLines } from "./garbagelinetypes.ts";
 import { BasePieceGenerator, RandomPieceGenerator } from "./piecechoice.ts";
 import { MarkBombClears } from "./gimmicks.ts";
 
@@ -185,7 +185,7 @@ export default class configprefabs{
     static get survivalalt(){
         let _gameConfig = new gameConfig()
 
-        _gameConfig.garbageChoice = new LinesGenerator(new NwideGarbage(2))
+        _gameConfig.garbageChoice = new LinesGenerator(new NwideHolesLines(2))
         _gameConfig.wave = [
         new garbagePacket(1),
         new garbagePacket(1),

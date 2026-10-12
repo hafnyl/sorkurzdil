@@ -196,7 +196,7 @@ export default class MatrixRendering {
 
         if(this.board.activepiece
             && !this.gameManager.movementManager.OverVoid()
-            && this.gameManager.PlacementCouldKill(this.gameManager.movementManager.DropHeight(this.board.activepiece,this.board.activeposition))
+            && this.gameManager.PlacementCouldKill(this.board.DropHeight(this.board.activepiece,this.board.activeposition))
         ){
             dangercolour = palette.tri.toHex()
             danger *= 3
@@ -319,7 +319,7 @@ export default class MatrixRendering {
     DrawGhost(){
         if(!this.board.activepiece) return;
         if(this.gameManager.movementManager.OverVoid()) return
-        let landpos =this.board.activeposition.add(this.gameManager.movementManager.DropHeight(this.board.activepiece,this.board.activeposition));
+        let landpos =this.board.activeposition.add(this.board.DropHeight(this.board.activepiece,this.board.activeposition));
         let ghostModel = this.board.activepiece.tileModel.withOpacity(this.game.userConfig.ghostOpacity);
         this.DrawPiece(this.board.activepiece,
             this.CoordsToScreenPos(landpos),
@@ -455,7 +455,7 @@ export default class MatrixRendering {
             if (enterT >= 1 && ripenT >= 1)
                 this.ctx.fillStyle = palette.attack1.flash(palette.attack2,33/1000).toHex();
 
-            var boxheight = packet.maxlines * this.boardtilesize.y / this.matrixzoom - this.garbagemargin
+            var boxheight = this.FSTL2(new vector2(0,packet.maxlines)).y / this.matrixzoom - this.garbagemargin
             if(packet.used){
                 const lingerT = this.game.gameConfig.garbageare > 0 ? (packet.ripen / this.game.gameConfig.garbageare / packet.maxlines) : 1
 
@@ -547,7 +547,7 @@ export default class MatrixRendering {
                 }
                 case cameraMode.focusGhost:{
                     if(!this.board.activepiece) break
-                    let trackpos = this.board.activeposition.add(this.gameManager.movementManager.DropHeight(this.board.activepiece,this.board.activeposition));
+                    let trackpos = this.board.activeposition.add(this.board.DropHeight(this.board.activepiece,this.board.activeposition));
                     let top = trackpos.y;
                     let bottom = Math.max(trackpos.y - this.board.spawnlocation.y / 2,0);
                     if(this.cameraYtarget > top)

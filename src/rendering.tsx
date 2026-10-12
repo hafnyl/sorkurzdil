@@ -186,7 +186,7 @@ export class rendering {
         }
 
         var special = ""
-        if(immobile)
+        if(immobile && !(spin||mini))
             special = " immobile"
         if(morph)
             special = " morph"
@@ -195,7 +195,7 @@ export class rendering {
 
         const fullclearname = (((mini && !spin) ? "mini " : "")
                 + piecejustplaced.name
-                + ((spin || mini) ? " spin " : " ")
+                + ((spin || mini || immobile) ? " spin " : " ")
                 + clearNames[Math.min(lines,clearNames.length)]
                 + special)
 

@@ -8,7 +8,7 @@ import gameFlags from './flags.ts';
 import { ReactElement } from 'react';
 import { gimmickReport } from './gimmicks.ts';
 import { BaseGarbageGenerator, LinesGenerator } from './garbagegeneration.ts';
-import { MessyGarbage, StraightGarbage } from './garbagelinetypes.ts';
+import { MessyLines, StraightsLines } from './garbagelinetypes.ts';
 import { BasePieceGenerator } from './piecechoice.ts';
 import { piece } from './pieces.ts';
 
@@ -148,12 +148,12 @@ export class gameManager{
         if(_gameConfig.levelgravity)
             _gameConfig.gravity = levelsGravities[Math.min(levelsGravities.length-1,this.game.levels)]
 
-        this.garbageGeneration = _gameConfig.garbageChoice || new LinesGenerator(new StraightGarbage())
+        this.garbageGeneration = _gameConfig.garbageChoice || new LinesGenerator(new StraightsLines())
         this.garbageGeneration.Seed(seed)
         this.currentgenerator = this.garbageGeneration
-        this.woundGeneration = _gameConfig.woundsChoice || new LinesGenerator(new MessyGarbage())
+        this.woundGeneration = _gameConfig.woundsChoice || new LinesGenerator(new MessyLines())
         this.woundGeneration.Seed(seed)
-        this.cheeseChoice = _gameConfig.cheeseChoice || new LinesGenerator(new MessyGarbage())
+        this.cheeseChoice = _gameConfig.cheeseChoice || new LinesGenerator(new MessyLines())
         this.cheeseChoice.Seed(seed)
 
         this.game.inputManager.onKeyDown.push((command:Command)=>{
@@ -172,11 +172,11 @@ export class gameManager{
                     break;
                 case Command.SpawnGarbage:
                     if(!_gameConfig.debug)break;
-                    this.WriteGarbageToBoard(this.garbageGeneration,1);
+                    this.WriteGarbageToBoard(this.garbageGeneration,1,false,false);
                     break;
                 case Command.SpawnGarbage4:
                     if(!_gameConfig.debug)break;
-                    this.WriteGarbageToBoard(this.garbageGeneration,20);
+                    this.WriteGarbageToBoard(this.garbageGeneration,20,false,false);
                     break;
                 case Command.SpawnWound:
                     if(!_gameConfig.debug)break;
@@ -264,47 +264,50 @@ export class gameManager{
     lastCleared = "";
     lastClearedWarlock = "";
 
-    ComboAdjacent(piecejustplaced:piece,lines:number,spin:boolean,mini:boolean,immobile:boolean){
+    /**affects combo ib2b meter */
+    ComboAdjacent(piecejustplaced:piece,lines:number,spin:boolean,mini:boolean,immobile:boolean,updatelastcleareds=false):[game,boolean,boolean,boolean,boolean,boolean]{
         var pc = this.board.matrix.VirtualPC();
         var combobreak = false, b2bbreak = false
+
+        var _game = clone(this.game)
         
         if(lines <= 0){
-            this.game.combo = -1;
+            _game.combo = -1;
             combobreak = true;
         }
         else
-            this.game.combo++;
+            _game.combo++;
         
-        switch(this.game.gameConfig.difficultlinecleartype){
+        switch(_game.gameConfig.difficultlinecleartype){
             case difficultlinecleartype.lenientallspin:
                 if(lines >= 4 || spin || mini || immobile || pc)
-                    this.game.ib2b++;
+                    _game.ib2b++;
                 else if(lines >= 1){
-                    this.game.ib2b = -1;
+                    _game.ib2b = -1;
                     b2bbreak = true;
                 }
                 break
             case difficultlinecleartype.allspin:
                 if(lines >= 4 || ((spin || mini || immobile) && lines >= 1) || pc)
-                    this.game.ib2b++;
+                    _game.ib2b++;
                 else if(lines >= 1){
-                    this.game.ib2b = -1;
+                    _game.ib2b = -1;
                     b2bbreak = true;
                 }
                 break
             case difficultlinecleartype.tspin:
                 if(lines >= 4 || ((spin || mini) && piecejustplaced.name === "T" && lines >= 1) || pc)
-                    this.game.ib2b++;
+                    _game.ib2b++;
                 else if(lines >= 1){
-                    this.game.ib2b = -1;
+                    _game.ib2b = -1;
                     b2bbreak = true;
                 }
                 break
             case difficultlinecleartype.tech:
                 if(((spin || mini) && lines >= 1) || pc)
-                    this.game.ib2b++;
+                    _game.ib2b++;
                 else if(lines >= 1){
-                    this.game.ib2b = -1;
+                    _game.ib2b = -1;
                     b2bbreak = true;
                 }
                 break
@@ -320,42 +323,44 @@ export class gameManager{
             magicianbreak = lastCleared === this.lastCleared;
             warlockbreak = lastClearedWarlock === this.lastClearedWarlock
             
-            this.lastCleared = lastCleared;
-            this.lastClearedWarlock = lastClearedWarlock;
+            if(updatelastcleareds){
+                this.lastCleared = lastCleared;
+                this.lastClearedWarlock = lastClearedWarlock;
+            }
         }
 
         if(spin || mini || immobile || lines >= 4){
             if(!spin && !mini && !immobile)
-                this.game.meter += lines - 1;
+                _game.meter += lines - 1;
             else if(mini)
-                this.game.meter += lines / 2;
+                _game.meter += lines / 2;
             else if(lines <= 0)
-                this.game.meter += 0.4;
+                _game.meter += 0.4;
             else if(lines <= 2)
-                this.game.meter += lines;
+                _game.meter += lines;
             else if(lines == 3)
-                this.game.meter += 3.6;
+                _game.meter += 3.6;
             else if(lines == 4)
-                this.game.meter += 5;
+                _game.meter += 5;
             else if(lines >= 5)
-                this.game.meter += 6;
+                _game.meter += 6;
         }else if(!pc){
             if(lines >= 1){
-                this.game.meter -= 5;
+                _game.meter -= 5;
             }
-            else if(this.game.meter > 16){
-                this.game.meter -= Math.min(0.8,this.game.meter - 16);
+            else if(_game.meter > 16){
+                _game.meter -= Math.min(0.8,_game.meter - 16);
             }
         }
 
-        if(pc && this.game.lines > 8)
-            this.game.meter += Math.max(6,Math.min(16,20-this.game.meter));
+        if(pc && _game.lines > 8)
+            _game.meter += Math.max(6,Math.min(16,20-_game.meter));
 
-        var healthdeath = this.game.meter < 0;
+        var healthdeath = _game.meter < 0;
 
-        this.game.meter = Math.max(0,this.game.meter);
+        _game.meter = Math.max(0,_game.meter);
 
-        return [combobreak,b2bbreak,magicianbreak,warlockbreak,healthdeath]
+        return [_game,combobreak,b2bbreak,magicianbreak,warlockbreak,healthdeath]
     }
 
     ComboWhatever(combobreak:boolean,b2bbreak:boolean,magicianbreak:boolean,warlockbreak:boolean,healthdeath:boolean,oldb2b:number,oldcombo:number,lines:number){
@@ -421,6 +426,7 @@ export class gameManager{
         for (let i = 0; i < this.garbageQueue.length; i++) {
             const packet = this.garbageQueue[i];
             if(packet.used) continue;
+            if(packet.lines <= 0) continue;
             if(packet.entrance < this.game.gameConfig.garbageentry) continue;
             if(packet.ripen < this.game.gameConfig.garbageripen) continue;
 
@@ -446,6 +452,9 @@ export class gameManager{
 
                 break
             }
+
+            if(toEnter <= 0)
+                break
         }
         this.StepGarbageEntering(0);
     }
@@ -458,6 +467,7 @@ export class gameManager{
         for (let i = 0; i < this.garbageQueue.length; i++) {
             const packet = this.garbageQueue[i];
             if(packet.used) continue;
+            if(packet.lines <= 0) continue;
 
             if(packet.lines <= toCancel){
                 toCancel -= packet.lines
@@ -487,12 +497,11 @@ export class gameManager{
     }
 
     CalculateAttack(piecejustplaced:piece,lines:number,spin:boolean,mini:boolean,immobile:boolean){
-        var pc = this.board.matrix.VirtualPC();
         var rawattack = 0
         //if(lines > 6)
         //    lines = 5
 
-        rawattack += this.game.gameConfig.attacking(this.game,piecejustplaced,lines,spin,mini,immobile,pc)
+        rawattack += this.game.gameConfig.attacking(this.game,piecejustplaced,lines,spin,mini,immobile)
 
         var attack = rawattack
         var defense = 0
@@ -532,6 +541,8 @@ export class gameManager{
         }
     }
 
+    vpcdebounce=false;
+
     OnLock(lr:lockReport){
         if(!this.board.activepiece)
             throw new Error("?")
@@ -564,12 +575,21 @@ export class gameManager{
             this.game.levels = Math.max(Math.floor(this.game.lines / 10),this.game.gameConfig.startlevel);
         }
         if(this.board.matrix.PerfectClear()){
+            if(this.game.lines < 4)
+                this.game.flags.tpc = true;
+            else if(this.game.lines <= 8)
+                this.game.flags.opc = true;
+            else
+                this.game.flags.pc = true;
+
             this.game.flags.otheralerts.push({
                 time: Date.now(),
                 code:"pc",
             })
             this.game.pc++;
-        }else if(this.board.matrix.VirtualPC()){
+        }else if(this.board.matrix.VirtualPC() && !this.vpcdebounce){
+            this.vpcdebounce = true
+            this.game.flags.vpc = true
             this.game.flags.otheralerts.push({
                 time:0,
                 code:"generic",
@@ -578,10 +598,11 @@ export class gameManager{
                     colour:new colour3(1,0,1)
                 },
             })
-            this.game.pc++;
             if(this.game.gameConfig.vpcclearsall)
                 this.board.matrix.ClearPerfect()
         }
+        if(!this.board.matrix.VirtualPC())
+            this.vpcdebounce = false
 
         this.game.flags.lineclearalerts.push({ //tell renderer we linecleared so they can draw the thing
             time:Date.now(),
@@ -594,14 +615,22 @@ export class gameManager{
             morph:lr.morph,
             combo:this.game.combo,
         })
-            
-        const [oldcombo,oldb2b] = [this.game.combo,this.game.ib2b] // a bunch of combo and b2b handling stuff
-        const [combobreak,b2bbreak,magicianbreak,warlockbreak,healthdeath] = this.ComboAdjacent(piecejustplaced,lines,lr.spin,lr.mini,lr.immobile)
-        this.ComboWhatever(combobreak,b2bbreak,magicianbreak,warlockbreak,healthdeath,oldb2b,oldcombo,lines);
 
-        this.CalculateScore(piecejustplaced,lines,lr.spin,lr.mini,lr.immobile); // score and attack obviously
+        const [oldcombo,oldb2b] = [this.game.combo,this.game.ib2b] // a bunch of combo and b2b handling stuff
+        const [_game,combobreak,b2bbreak,magicianbreak,warlockbreak,healthdeath] = this.ComboAdjacent(piecejustplaced,lines,lr.spin,lr.mini,lr.immobile,true)
+        this.ComboWhatever(combobreak,b2bbreak,magicianbreak,warlockbreak,healthdeath,oldb2b,oldcombo,lines);
+        
+        if(combobreak)
+            this.game.combo = _game.combo // i kind of have to do this because attack doesnt want b2b to be calculated yet but combo does
+        if(b2bbreak){
+            this.game.ib2b = _game.ib2b; this.game.meter = _game.meter
+        }
+
         const attack = this.CalculateAttack(piecejustplaced,lines,lr.spin,lr.mini,lr.immobile)
+        this.CalculateScore(piecejustplaced,lines,lr.spin,lr.mini,lr.immobile); // score and attack obviously
         this.Backfire(attack)
+
+        this.game.combo = _game.combo; this.game.ib2b = _game.ib2b; this.game.meter = _game.meter
 
         if(lines <= 0 || !this.game.gameConfig.comboBlocking) // garbage related stuff
             this.GarbageEnter()
@@ -653,13 +682,14 @@ export class gameManager{
     garbageelapsed:number=0;
     garbageswitch=false;
 
-    WriteGarbageToBoard(generator:BaseGarbageGenerator,numberlines:number,dontreset=false){
+    WriteGarbageToBoard(generator:BaseGarbageGenerator,numberlines:number,dontreset,iscut:boolean){
         if(!dontreset){
             generator.Reset(this.garbageswitch);
             this.garbageswitch = !this.garbageswitch
         }
-        generator.Write(this.board,this.game.gameConfig.garbageType,numberlines)
-        while(this.board.activepiece && !this.movementManager.ValidShift(vector2.zero,this.board.activepiece,this.board.activeposition))
+        console.log(numberlines)
+        generator.Write(this.board,this.game.gameConfig.garbageType,numberlines,iscut)
+        while(this.board.activepiece && !this.board.ValidShift(vector2.zero,this.board.activepiece,this.board.activeposition))
             this.board.activeposition = this.board.activeposition.add(vector2.up)
     }
 
@@ -689,11 +719,10 @@ export class gameManager{
         while(this.garbageelapsed >= this.game.gameConfig.garbageare){
             this.garbageelapsed -= this.game.gameConfig.garbageare;
 
-            this.WriteGarbageToBoard(this.currentgenerator,1,true)
+            this.WriteGarbageToBoard(this.currentgenerator,1,true,this.currentpacket.lines > 1)
 
             this.currentpacket.lines--;
             if(this.currentpacket.lines <= 0){
-                console.log(this.currentpacket.cut)
                 this.iscut = this.currentpacket.cut
                 if(this.garbagebuffer.length <= 0){
                     this.currentpacket = undefined
@@ -701,8 +730,9 @@ export class gameManager{
                     return;
                 }
                 else{
-
-                    if(!this.currentpacket.cut){
+                    this.currentpacket = this.garbagebuffer.shift() as garbagePacket
+                    this.currentpacket.ripen = this.garbageelapsed
+                    if(!this.iscut){
                         if(this.currentpacket.generator)
                             this.currentgenerator = this.currentpacket.generator
                         else
@@ -711,8 +741,6 @@ export class gameManager{
                         this.garbageswitch = !this.garbageswitch
                         this.garbageelapsed -= this.game.gameConfig.garbagepacketare;
                     }
-                    this.currentpacket = this.garbagebuffer.shift() as garbagePacket
-                    this.currentpacket.ripen = this.garbageelapsed
                 }
             }
 
@@ -721,7 +749,7 @@ export class gameManager{
 
     WriteWoundToBoard(numberlines:number){
         if(this.board.activepiece){
-            var upshift = Math.max(0,numberlines - (-this.movementManager.DropHeight(this.board.activepiece,this.board.activeposition).y))
+            var upshift = Math.max(0,numberlines - (-this.board.DropHeight(this.board.activepiece,this.board.activeposition).y))
             this.board.activeposition = this.board.activeposition.add(vector2.up.mul(upshift));
         }
 
@@ -864,6 +892,13 @@ export class gameManager{
             this.board.yoffset = 0
             return
         }
+
+        this.game.flags.tpc = false
+        this.game.flags.opc = false
+        this.game.flags.pc = false
+        this.game.flags.hpc = false
+        this.game.flags.cc = false
+        this.game.flags.vpc = false
         
         this.EvaluateCheese();
 

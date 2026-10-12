@@ -70,7 +70,7 @@ export class matrix{
     height:number;
     effectiveHeight:number;
     effectiveLeft:number;
-    effectiveLength:number;
+    effectiveRight:number;
     effectiveDown:number;
 
     onUpdate:(()=>void)[]=[];
@@ -93,7 +93,7 @@ export class matrix{
 
     get useLength():number{
         if(this.gameConfig.extendclearxrequirement)
-            return Math.max(this.width,this.effectiveLength)
+            return Math.max(this.width,this.effectiveRight)
         else
             return this.width
     }
@@ -112,7 +112,7 @@ export class matrix{
         this.effectiveHeight = 0;
         this.effectiveDown = 0;
         this.effectiveLeft = 0;
-        this.effectiveLength = _gameConfig.width;
+        this.effectiveRight = _gameConfig.width;
         this.gameConfig = _gameConfig
     }
 
@@ -144,9 +144,8 @@ export class matrix{
 
     UpdateEffectiveExtents(){
         const extents = this.Extents()
-        console.log(extents)
         this.effectiveHeight = extents.north + 1
-        this.effectiveLength = extents.east + 1
+        this.effectiveRight = extents.east + 1
         this.effectiveDown = extents.south
         this.effectiveLeft = extents.west
     }
@@ -389,8 +388,6 @@ export class matrix{
 
             let isdig = false;
 
-            console.log(this.useLeft,this.useLength)
-
             for(let x=this.useLeft; x<this.useLength; x++){
                 let i = new vector2(x,y);
                 let thile = this.GetTile(i);
@@ -576,5 +573,73 @@ export class board{
 
     PointsToVoid(position:vector2,direction:vector2){
         return this.InBounds(position.add(direction.normalise().mul(this.matrix.width * this.matrix.height)))
+    }
+
+        PieceNoncolliding(shift:vector2,_piece:piece,position:vector2,_boundstype:boundstype=this.boundstype){
+        if(!this.PieceInBounds(shift,_piece,position,_boundstype)) return false
+        for (let i=0; i<_piece.tileoffsets.length; i++){
+            const offset = _piece.tileoffsets[i];
+            if(!this.matrix.IsValid(position.add(offset).add(shift))){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    PieceStrictlyInBounds(shift:vector2,_piece:piece,position:vector2,_boundstype:boundstype=this.boundstype){
+        for (let i=0; i<_piece.tileoffsets.length; i++){
+            const offset = _piece.tileoffsets[i];
+            if(!this.InMatrix(position.add(offset).add(shift)))
+                return false;
+        }
+        return true;
+    }
+
+    PieceInBounds(shift:vector2,_piece:piece,position:vector2,_boundstype:boundstype=this.boundstype){
+        for (let i=0; i<_piece.tileoffsets.length; i++){
+            const offset = _piece.tileoffsets[i];
+            if(!this.InBounds(position.add(offset).add(shift),_boundstype))
+                return false;
+        }
+        return true;
+    }
+
+    /**switches between valid placement and in bounds based on active piece phasing*/
+    ValidShift(shift:vector2,_piece:piece,position:vector2,_boundstype:boundstype=this.boundstype){
+        if(this.matrix.gameConfig.activepiecephasethroughblocks)
+            return this.PieceInBounds(shift,_piece,position,_boundstype);
+        else
+            return this.PieceNoncolliding(shift,_piece,position,_boundstype);
+    }
+
+    /**how much can you shift downwards before you hit something (aka ghost piece calculation)
+     * 
+     * also its actualy a vector2 for the offset that you make for the drop
+     * 
+     * you can also use this for autoshifting
+     * 
+     * this uses placement checking so you can use it with harddrop
+    */
+    DropHeight(_piece:piece,position:vector2,dropdirection=vector2.down,_boundstype:boundstype=this.boundstype):vector2{
+        let dropHeight = vector2.zero;
+        let exhaust = 0
+
+        var usebounds = this.boundstype
+        if((this.boundstype !== boundstype.normal) && this.matrix.gameConfig.boundlessdropsusefloorbounded && this.PieceInBounds(vector2.zero,_piece,position,boundstype.normal))
+            usebounds = boundstype.normal;
+
+        while(this.PieceNoncolliding(dropHeight.add(dropdirection),_piece,position,usebounds) && this.PieceInBounds(dropHeight.add(dropdirection),_piece,position,usebounds)){
+            dropHeight = dropHeight.add(dropdirection);
+            
+            if(dropHeight.sqMag() > (this.matrix.width * this.matrix.height)**2)
+                return new vector2(0,Number.NEGATIVE_INFINITY)
+            if(dropHeight.add(position).y + _piece.boundingrectangle.north <= this.matrix.lowvanishingpoint)
+                return new vector2(0,Number.NEGATIVE_INFINITY)
+
+            exhaust++
+            if(exhaust > 3000000)
+                throw new Error("your taken too long")
+        }
+        return dropHeight;
     }
 }

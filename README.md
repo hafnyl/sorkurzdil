@@ -1,7 +1,7 @@
 the game is called sul|fir or sulfir or sulfur but in the code its called sorkurzdil
 
 known bugs
-- why when you do a normal tspin its counted as immobile
+- i think sometimes two garbage lines spawn that are
 
 ~~if a bug is easily encountered and recreatable i would probably have fixed it by now~~
 - lag happens every now and then and i dont know why

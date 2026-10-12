@@ -123,92 +123,24 @@ export default class MovementManager{
         })
     }
 
-    PieceNoncolliding(shift:vector2,_piece:piece,position:vector2,_boundstype:boundstype=this.board.boundstype){
-        if(!this.PieceInBounds(shift,_piece,position,_boundstype)) return false
-        for (let i=0; i<_piece.tileoffsets.length; i++){
-            const offset = _piece.tileoffsets[i];
-            if(!this.board.matrix.IsValid(position.add(offset).add(shift))){
-                return false;
-            }
-        }
-        return true;
-    }
-
-    PieceStrictlyInBounds(shift:vector2,_piece:piece,position:vector2,_boundstype:boundstype=this.board.boundstype){
-        for (let i=0; i<_piece.tileoffsets.length; i++){
-            const offset = _piece.tileoffsets[i];
-            if(!this.board.InMatrix(position.add(offset).add(shift)))
-                return false;
-        }
-        return true;
-    }
-
-    PieceInBounds(shift:vector2,_piece:piece,position:vector2,_boundstype:boundstype=this.board.boundstype){
-        for (let i=0; i<_piece.tileoffsets.length; i++){
-            const offset = _piece.tileoffsets[i];
-            if(!this.board.InBounds(position.add(offset).add(shift),_boundstype))
-                return false;
-        }
-        return true;
-    }
-
-    /**switches between valid placement and in bounds based on active piece phasing*/
-    ValidShift(shift:vector2,_piece:piece,position:vector2,_boundstype:boundstype=this.board.boundstype){
-        if(this.game.gameConfig.activepiecephasethroughblocks)
-            return this.PieceInBounds(shift,_piece,position,_boundstype);
-        else
-            return this.PieceNoncolliding(shift,_piece,position,_boundstype);
-    }
-
     Grounded(){
         if(!this.board.activepiece)
             return false
-        return !this.ValidShift(vector2.down,this.board.activepiece,this.board.activeposition);
-    }
-
-    /**how much can you shift downwards before you hit something (aka ghost piece calculation)
-     * 
-     * also its actualy a vector2 for the offset that you make for the drop
-     * 
-     * you can also use this for autoshifting
-     * 
-     * this uses placement checking so you can use it with harddrop
-    */
-    DropHeight(_piece:piece,position:vector2,dropdirection=vector2.down,_boundstype:boundstype=this.board.boundstype):vector2{
-        let dropHeight = vector2.zero;
-        let exhaust = 0
-
-        var usebounds = this.board.boundstype
-        if((this.board.boundstype !== boundstype.normal) && this.game.gameConfig.boundlessdropsusefloorbounded && this.PieceInBounds(vector2.zero,_piece,position,boundstype.normal))
-            usebounds = boundstype.normal;
-
-        while(this.PieceNoncolliding(dropHeight.add(dropdirection),_piece,position,usebounds) && this.PieceInBounds(dropHeight.add(dropdirection),_piece,position,usebounds)){
-            dropHeight = dropHeight.add(dropdirection);
-            
-            if(dropHeight.sqMag() > (this.board.matrix.width * this.board.matrix.height)**2)
-                return new vector2(0,Number.NEGATIVE_INFINITY)
-            if(dropHeight.add(position).y + _piece.boundingrectangle.north <= this.board.matrix.lowvanishingpoint)
-                return new vector2(0,Number.NEGATIVE_INFINITY)
-
-            exhaust++
-            if(exhaust > 3000000)
-                throw new Error("your taken too long")
-        }
-        return dropHeight;
+        return !this.board.ValidShift(vector2.down,this.board.activepiece,this.board.activeposition);
     }
 
     OverVoid():boolean{
         if(!this.board.activepiece)
             return false
 
-        return !isFinite(this.DropHeight(this.board.activepiece,this.board.activeposition).y)
+        return !isFinite(this.board.DropHeight(this.board.activepiece,this.board.activeposition).y)
     }
 
     //piece movement
 
     Leeway(fallHeight:number,_piece:piece,position:vector2){
         for(let i=1; i<=fallHeight; i++)
-            if(!this.ValidShift(new vector2(0,-i),_piece,position))
+            if(!this.board.ValidShift(new vector2(0,-i),_piece,position))
                 return false;
         return true;
     }
@@ -216,7 +148,7 @@ export default class MovementManager{
     AttemptShift(shift:vector2,_boundstype=this.board.boundstype){
         if(!this.board.activepiece)
             return false
-        if(!this.ValidShift(shift,this.board.activepiece,this.board.activeposition,_boundstype))
+        if(!this.board.ValidShift(shift,this.board.activepiece,this.board.activeposition,_boundstype))
             return false
         this.board.activeposition = this.board.activeposition.add(shift);
         return true
@@ -257,7 +189,7 @@ export default class MovementManager{
             return Number.POSITIVE_INFINITY
 
         var usebounds = this.board.boundstype
-        if((this.board.boundstype !== boundstype.normal) && this.game.gameConfig.boundlessdropsusefloorbounded && this.PieceInBounds(vector2.zero,this.board.activepiece,this.board.activeposition,boundstype.normal))
+        if((this.board.boundstype !== boundstype.normal) && this.game.gameConfig.boundlessdropsusefloorbounded && this.board.PieceInBounds(vector2.zero,this.board.activepiece,this.board.activeposition,boundstype.normal))
             usebounds = boundstype.normal;
 
         var dropHeight = 0
@@ -266,7 +198,7 @@ export default class MovementManager{
             const earlylock = this.EvaluateEarlyLockGimmicks()
             if(!success) break
             if(earlylock){
-                this.Lock(this.ValidShift(vector2.down,this.board.activepiece,this.board.activeposition) || !lockintent);
+                this.Lock(this.board.ValidShift(vector2.down,this.board.activepiece,this.board.activeposition) || !lockintent);
                 break
             }
 
@@ -306,7 +238,7 @@ export default class MovementManager{
     AttemptLodge(_piece:piece,position:vector2,flipdirection=false):movementReport{
         for(const ir of this.game.gameConfig.lodges){
             const i = flipdirection ? ir.hadamard(new vector2(-1,1)) : ir;
-            if(!this.ValidShift(i,_piece,position)) continue
+            if(!this.board.ValidShift(i,_piece,position)) continue
 
             const [spin,mini,immobile] = this.SpinDetection(this.board.activeposition.add(i))
             if(spin || mini || immobile){
@@ -358,7 +290,7 @@ export default class MovementManager{
         turns = (turns + 4) % 4
 
         var usebounds = this.board.boundstype
-        if((this.board.boundstype !== boundstype.normal) && this.game.gameConfig.boundlessretainboundedkicksbounded && this.PieceInBounds(vector2.zero,_piece,position,boundstype.normal))
+        if((this.board.boundstype !== boundstype.normal) && this.game.gameConfig.boundlessretainboundedkicksbounded && this.board.PieceInBounds(vector2.zero,_piece,position,boundstype.normal))
             usebounds = boundstype.normal;
 
         let rotatedPiece = _piece.rotated(turns)
@@ -376,7 +308,7 @@ export default class MovementManager{
                     successful:false
                 }
 
-            if(this.ValidShift(shift,rotatedPiece,position,usebounds)){
+            if(this.board.ValidShift(shift,rotatedPiece,position,usebounds)){
                 position = position.add(shift);
                 
                 if(i == 1)
@@ -436,7 +368,7 @@ export default class MovementManager{
                     successful:false
                 }
 
-            if(this.ValidShift(shift,rotatedPiece,position)){
+            if(this.board.ValidShift(shift,rotatedPiece,position)){
                 return {
                     piece:rotatedPiece,
                     position:position.add(shift),
@@ -455,8 +387,8 @@ export default class MovementManager{
     }
 
     /**function to calculate delayed auto shift */
-    FDAS(x:number){
-        return Math.ceil(Math.max(0,(x - this.game.userConfig.das)/this.game.userConfig.arr));
+    FDAS(x:number,das:number,arr:number){
+        return Math.ceil(Math.max(0,(x - das)/arr));
     }
 
     EvaluateDAS(command:Command,deltaTime:number){
@@ -467,18 +399,31 @@ export default class MovementManager{
         if(command==Command.ShiftLeft)
             direction = vector2.left;
         
+        var inbounds = this.board.PieceInBounds(vector2.zero,this.board.activepiece,this.board.activeposition,boundstype.floorless);
+
+        var usearr = this.game.userConfig.arr
+        if(!inbounds){
+            if(!this.game.gameConfig.dasallowedpastbounds)
+                return
+            if(this.game.gameConfig.dasforcedpastbounds)
+                usearr = this.game.gameConfig.arr
+        }
+
         const zero = this.game.inputManager.Held(command);
         const t = Date.now() - zero;
-        const fdasref = this.FDAS(t)
-        var deltaSteps = fdasref - this.FDAS(t-deltaTime);
+        const fdasref = this.FDAS(t,this.game.userConfig.das,usearr)
+        var deltaSteps = fdasref - this.FDAS(t-deltaTime,this.game.userConfig.das,usearr);
 
         if(!isFinite(fdasref))
             deltaSteps = this.board.matrix.width
 
-        if(command==Command.ShiftLeft)
-            deltaSteps = Math.max(0,Math.min(deltaSteps,this.board.activeposition.x + this.board.activepiece.boundingrectangle.west))
-        else
-            deltaSteps = Math.max(0,Math.min(deltaSteps,this.board.matrix.width - this.board.activeposition.x - this.board.activepiece.boundingrectangle.east - 1))
+        if(inbounds && this.game.gameConfig.dasstopatbounds){
+            if(command==Command.ShiftLeft)
+                deltaSteps = Math.max(0,Math.min(deltaSteps,this.board.activeposition.x + this.board.activepiece.boundingrectangle.west))
+            else
+                deltaSteps = Math.max(0,Math.min(deltaSteps,this.board.matrix.width - this.board.activeposition.x - this.board.activepiece.boundingrectangle.east - 1))
+        } else
+            deltaSteps = Math.min(deltaSteps,this.board.matrix.width)
 
         if(this.Grounded()) // compensate for soft drop if it didnt do that this frame (because it was grounded)
             if(this.game.inputManager.Held(Command.SoftDrop))
@@ -544,7 +489,7 @@ export default class MovementManager{
             clutches = true
         }
 
-        if(!this.ValidShift(vector2.zero,spawnpiece,spawnlocation)){
+        if(!this.board.ValidShift(vector2.zero,spawnpiece,spawnlocation)){
             if(usemargin < 0)
                 dies = true
         }else
@@ -613,7 +558,7 @@ export default class MovementManager{
         var immobile = true;
 
         for(const offset of [vector2.up,vector2.down,vector2.left,vector2.right])
-            if (this.ValidShift(offset,_piece,position)){
+            if (this.board.ValidShift(offset,_piece,position)){
                 immobile = false
                 break
             }
@@ -753,9 +698,9 @@ export default class MovementManager{
     Lock(earlylock=false){
         if(!this.board.activepiece)
             return
-        if(!this.PieceNoncolliding(vector2.zero,this.board.activepiece,this.board.activeposition) || !this.PieceInBounds(vector2.zero,this.board.activepiece,this.board.activeposition))
+        if(!this.board.PieceNoncolliding(vector2.zero,this.board.activepiece,this.board.activeposition) || !this.board.PieceInBounds(vector2.zero,this.board.activepiece,this.board.activeposition))
             return
-        if(this.game.gameConfig.verticallineclears && !this.PieceStrictlyInBounds(vector2.zero,this.board.activepiece,this.board.activeposition))
+        if(this.game.gameConfig.verticallineclears && !this.board.PieceStrictlyInBounds(vector2.zero,this.board.activepiece,this.board.activeposition))
             return
 
         this.clutcheligible = false
@@ -866,7 +811,7 @@ export default class MovementManager{
                 delete this.game.inputManager.heldKeys[Command.SoftDrop]
                 return
             }
-            displacement = -this.DropHeight(this.board.activepiece,this.board.activeposition).y * this.game.gameConfig.gravity;
+            displacement = -this.board.DropHeight(this.board.activepiece,this.board.activeposition).y * this.game.gameConfig.gravity;
         }
             
         this.gravityelapsed += displacement * deltaTime;
@@ -874,7 +819,7 @@ export default class MovementManager{
         if(this.game.gameConfig.gravity !== 0)
             this.game.flags.nongravitydisplacementthisframe = this.game.flags.nongravitydisplacementthisframe.add(vector2.down.mul(displacement / this.game.gameConfig.gravity));
         else
-            this.game.flags.nongravitydisplacementthisframe = this.game.flags.nongravitydisplacementthisframe.add(this.DropHeight(this.board.activepiece,this.board.activeposition));
+            this.game.flags.nongravitydisplacementthisframe = this.game.flags.nongravitydisplacementthisframe.add(this.board.DropHeight(this.board.activepiece,this.board.activeposition));
     }
 
     WhileInAir(deltaTime:number){

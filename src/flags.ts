@@ -28,6 +28,13 @@ export default class gameFlags{
     justspinned = false;
     shakeincrease = 0;
 
+    tpc = false;
+    opc = false;
+    pc = false;
+    hpc = false;
+    cc = false;
+    vpc = false;
+
     waveprogress = 0;
 
     negativeb2bmeter=false;

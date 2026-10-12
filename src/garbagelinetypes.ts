@@ -4,7 +4,7 @@ import { tileModels } from "./tilemodels.ts";
 
 export type dualGarbageType = (alt:boolean)=>tile;
 
-export class BaseGarbageLineGenerator{
+export class BaseLineGenerator{
     randomiser:Randomiser;
     altskin:boolean=false;
     constructor(){
@@ -36,7 +36,7 @@ export class BaseGarbageLineGenerator{
     }
 }
 
-export class SwitchGarbageLineGenerator extends BaseGarbageLineGenerator{
+export class SwitchLines extends BaseLineGenerator{
     IsHole(i:number):boolean{
         return this.randomiser.next() <= 0.5
     }
@@ -57,7 +57,7 @@ export class SwitchGarbageLineGenerator extends BaseGarbageLineGenerator{
     }
 }
 
-export class HolesGarbageLineGenerator extends SwitchGarbageLineGenerator{
+export class HolesLines extends SwitchLines{
     holes:number[]=[];
 
     HoleChoice(width:number):number[]{
@@ -73,7 +73,7 @@ export class HolesGarbageLineGenerator extends SwitchGarbageLineGenerator{
     }
 }
 
-export class MessyGarbage extends HolesGarbageLineGenerator{
+export class MessyLines extends HolesLines{
     repeat:number|undefined;
 
     Reset(altskin:boolean): void {
@@ -92,7 +92,7 @@ export class MessyGarbage extends HolesGarbageLineGenerator{
     }
 }
 
-export class StraightGarbage extends HolesGarbageLineGenerator{
+export class StraightsLines extends HolesLines{
     hole:number|undefined
 
     Reset(altskin:boolean): void {
@@ -102,12 +102,13 @@ export class StraightGarbage extends HolesGarbageLineGenerator{
     }
 
     HoleChoice(width: number): number[] {
-        this.hole = this.hole||Math.floor(this.randomiser.next()*width)
+        if(this.hole === undefined)
+            this.hole = Math.floor(this.randomiser.next()*width)
         return [this.hole]
     }
 }
 
-export class NwideGarbage extends StraightGarbage{
+export class NwideHolesLines extends StraightsLines{
     holecount:number;
 
     constructor(holecount=2){
@@ -116,7 +117,8 @@ export class NwideGarbage extends StraightGarbage{
     }
 
     HoleChoice(width: number): number[] {
-        this.hole = this.hole||Math.floor(this.randomiser.next()*(width-(this.holecount-1)))
+        if(this.hole === undefined)
+            this.hole = Math.floor(this.randomiser.next()*(width-(this.holecount-1)))
         const holeschosen:number[] = []
         for(let i=0;i<this.holecount;i++)
             holeschosen.push(i+this.hole)
@@ -124,7 +126,7 @@ export class NwideGarbage extends StraightGarbage{
     }
 }
 
-export class CheckerGarbage extends SwitchGarbageLineGenerator{
+export class CheckersLines extends SwitchLines{
     parity:number=0
 
     Reset(altskin:boolean): void {
@@ -141,7 +143,7 @@ export class CheckerGarbage extends SwitchGarbageLineGenerator{
     }
 }
 
-export class Damnation extends BaseGarbageLineGenerator{
+export class Damnation extends BaseLineGenerator{
     Next(_garbageType:dualGarbageType=tile.garbage,width:number):tile[]{
         var line:tile[] = []
         var choose = this.randomiser.next() < 0.5 ? 6 : 7;
@@ -160,7 +162,7 @@ export class Damnation extends BaseGarbageLineGenerator{
     }
 }
 
-export class MultiholeGarbage extends BaseGarbageLineGenerator{
+export class MultiholeLines extends BaseLineGenerator{
     constructor(holes:number){
         super()
         this.holes = holes;
@@ -186,7 +188,7 @@ export class MultiholeGarbage extends BaseGarbageLineGenerator{
     }
 }
 
-export class OneBlockGarbage extends HolesGarbageLineGenerator{
+export class OneBlockLine extends HolesLines{
     GarbageType(_garbageType: dualGarbageType): tile {
         return new tile()
     }
@@ -196,7 +198,7 @@ export class OneBlockGarbage extends HolesGarbageLineGenerator{
     }
 }
 
-export class SecretGrade extends SwitchGarbageLineGenerator{
+export class SecretGradeLines extends SwitchLines{
     parity=-1;
     pong=-1;
 
@@ -216,7 +218,7 @@ export class SecretGrade extends SwitchGarbageLineGenerator{
     }
 }
 
-export class Diagonal extends SecretGrade{
+export class LinesDiagonal extends SecretGradeLines{
     GarbageType(_garbageType: dualGarbageType): tile {
         return new tile()
     }
@@ -226,7 +228,7 @@ export class Diagonal extends SecretGrade{
     }
 }
 
-export class Bombs extends StraightGarbage{
+export class Bombs extends StraightsLines{
     HoleType(_garbageType: dualGarbageType): tile {
         const _tile = new tile(tileModels.bomb);
         _tile.countstoclear = false;
@@ -239,7 +241,7 @@ export class Bombs extends StraightGarbage{
     }
 }
 
-export class NwideBombs extends NwideGarbage{
+export class NwideBombs extends NwideHolesLines{
     HoleType(_garbageType: dualGarbageType): tile {
         const _tile = new tile(tileModels.bomb);
         _tile.countstoclear = false;
@@ -252,7 +254,7 @@ export class NwideBombs extends NwideGarbage{
     }
 }
 
-export class Solid extends BaseGarbageLineGenerator{
+export class Solid extends BaseLineGenerator{
     GarbageType(_garbageType: dualGarbageType): tile {
         const _tile = _garbageType(this.altskin)
         _tile.countstoclear = false

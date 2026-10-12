@@ -46,13 +46,13 @@ export const simpleScoringSystems = Object.freeze({
     }
 })
 
-export type attackingSystem = (_game:game,piecejustplaced:piece,lines:number,spin:boolean,mini:boolean,immobile:boolean,pc:boolean)=>number;
+export type attackingSystem = (_game:game,piecejustplaced:piece,lines:number,spin:boolean,mini:boolean,immobile:boolean)=>number;
 
 export const attackingSystems = Object.freeze({
-    "guideline":function(_game:game,_:piece,lines:number,spin:boolean,mini:boolean,__:boolean,pc:boolean){
+    "guideline":function(_game:game,_piece:piece,lines:number,spin:boolean,mini:boolean,_immobile:boolean){
         var attack = 0
 
-        if(lines > 0){
+        if(lines > 0 && !spin){
             if(lines < 4)
                 attack += lines - 1;
             if(lines >= 4)
@@ -62,7 +62,7 @@ export const attackingSystems = Object.freeze({
         if(lines > 0 && spin)
             attack += 2 * lines;
 
-        if(pc)
+        if(_game.flags.pc || _game.flags.opc || _game.flags.tpc)
             attack += 10
 
         if(_game.combo > 1){
@@ -83,7 +83,7 @@ export const attackingSystems = Object.freeze({
 
         return attack
     },
-    "qp2":function(_game:game,_:piece,lines:number,spin:boolean,mini:boolean,__:boolean,pc:boolean){
+    "qp2":function(_game:game,_piece:piece,lines:number,spin:boolean,_mini:boolean,_immobile:boolean){
         var attack = 0
 
         if(lines > 0){
@@ -98,8 +98,8 @@ export const attackingSystems = Object.freeze({
         if(lines > 0 && spin)
             attack += 2 * lines;
 
-        if(pc)
-            attack += 10
+        if(_game.flags.pc || _game.flags.opc || _game.flags.tpc)
+            attack += 3
 
         if(_game.combo > 1){
             if(_game.combo > 10)
@@ -394,9 +394,12 @@ export class gameConfig{
     boundstype=boundstype.normal;
     boundlessretainboundedkicksbounded=true; // if the boundstype lets you go past the left and right, but the piece is still within bounds, on rotation you can kick off of the walls
     boundlessdropsusefloorbounded=true; // if boundstype lets you fall into the void within the walls of the matrix, sonic dropping and harddropping would keep you in bounds (but not softdropping)
+    dasstopatbounds=true; // if its true it makes finesse possible again
+    dasallowedpastbounds=true;
+    dasforcedpastbounds=true; // changes your das to gameconfig.arr because i dont really want to add another arr value
     voiddeath = true; // you lose if you drop your piece into the void
     voidare = 750; // are increase after dropping a piece into the void
-    vpcclearsall = true; // performing a pc within the bounds when there are still items outside of bounds will clear the items that are out of bounds (i added this because some tiles are unclearable when youre allowed to place pieces level with the floor or below)
+    vpcclearsall = true; // performing a pc within the bounds when there are still items outside of bounds will clear the items that are out of bounds (i added this because some tiles are unclearable when youre allowed to place pieces level with the floor or below) (works well with boundtype tower and platform but doesnt go well with wallless, doesnt go well with floorless or actual boundless if airlock is allowed)
     extendclearxrequirement = true; // if boundstype lets you go past the walls you dont rely on going wall to wall for clearing lines, instead you just check the furthest tiles to the left and to the right
 
     extendheight = -1; // how high above the height youre allowed to place pieces / youre allowed to move pieces into (-1 is infinite)
