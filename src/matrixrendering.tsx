@@ -495,6 +495,14 @@ export default class MatrixRendering {
         }
     }
 
+    barradius = 5
+    DrawBar(y:number,colour:colour3){
+        this.ctx.globalAlpha = 1
+        this.ctx.fillStyle = colour.toHex()
+        this.FillRect(this.CoordsToScreenPos(new vector2(-0.5,y-0.5)).add(new vector2(this.gridwidth.x / 2,-this.barradius)),
+        this.FSTL2(new vector2(this.board.matrix.width,0)).add(new vector2(-this.gridwidth.x,this.barradius * 2)))
+    }
+
     DrawBoard(){
         this.DrawMatrixBackground();
         this.DrawMatrix();
@@ -509,6 +517,15 @@ export default class MatrixRendering {
 
         if(!this.game.gameOver && this.Danger()[0] > 0)
             this.DrawHazards();
+
+        if(this.game.flags.sprintbar > 0 && this.game.flags.sprintbar < this.board.matrix.height && this.game.flags.sprintbar == this.game.flags.limbobar)
+            this.DrawBar(this.game.flags.sprintbar, palette.tri)
+        else{
+            if(this.game.flags.sprintbar > 0 && this.game.flags.sprintbar < this.board.matrix.height)
+                this.DrawBar(this.game.flags.sprintbar, palette.one)
+            if(this.game.flags.limbobar > 0 && this.game.flags.limbobar < this.board.matrix.height)
+                this.DrawBar(this.game.flags.limbobar, palette.two)
+        }
     }
 
     cameraYoffset = 0;

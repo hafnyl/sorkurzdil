@@ -53,15 +53,15 @@ _gameConfig.debug = true;
 //]
 
 //_gameConfig.garbageChoice = new Decheese(new WidthGarbage(),new LinesGarbage(new StraightsLines()), 1)
-_gameConfig.garbageChoice = new DebrisGarbage(new BasePieceGenerator(bagprefabs.tetrominos))
+//_gameConfig.garbageChoice = new DebrisGarbage(new BasePieceGenerator(bagprefabs.tetrominos))
+//
+//_gameConfig.garbageare = 100
+//_gameConfig.piecewaitsforgarbage = true
+//
+//_gameConfig.backfire = 2
+//_gameConfig.garbageripen = 8000
 
-_gameConfig.garbageare = 100
-_gameConfig.piecewaitsforgarbage = true
-
-_gameConfig.backfire = 2
-_gameConfig.garbageripen = 8000
-
-_gameConfig.name = "debris garbage (backfire)"
+_gameConfig.Splice(configs.allpc28)
 
 //_gameConfig.Splice(configs.m123)
 

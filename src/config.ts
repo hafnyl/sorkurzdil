@@ -220,6 +220,7 @@ export const missions = Object.freeze({
     },
     "lines":function(goal:number){
         return function(_game:game){
+            _game.flags.sprintbar = goal - _game.lines;
             return {
                 name:"lines",
                 text:Math.max(0,goal - _game.lines).toString(),
@@ -306,7 +307,8 @@ export const constraints = Object.freeze({
         return !_game.flags.negativeb2bmeter;
     },
     "4hpc":function(_game:game){
-        return _game.lines / 4 < _game.pc + 1;
+        _game.flags.limbobar = 4 - (_game.lines - _game.pc * 4);
+        return _game.board.matrix.effectiveUp - 1 < _game.flags.limbobar
     },
     "techrashonly":function(_game:game){
         return (_game.lines % 4) == 0;
@@ -537,8 +539,12 @@ export class gameConfig{
                 return
             }
 
-            if(e == "name")
-                this.name = this.name + " + " + other.name;
+            if(e == "name"){
+                if(this.name == judge.name)
+                    this.name = other.name
+                else
+                    this.name = this.name + " + " + other.name;
+            }
             else if(e == "pieceChoice"){
                 if(other[e].constructor != judge[e].constructor || other[e].baghash != judge[e].baghash)
                     this[e] = other[e];

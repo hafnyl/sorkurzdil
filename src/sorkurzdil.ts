@@ -16,6 +16,7 @@ export class game{
     gameConfig:gameConfig;
     userConfig:userConfig;
     inputManager:InputManager;
+    board:board;
     
     flags:gameFlags = new gameFlags();
 
@@ -68,10 +69,11 @@ export class game{
 
     piecesTimes:number[] = [];
 
-    constructor(_gameConfig:gameConfig,_userConfig:userConfig,inputManager:InputManager){
+    constructor(_gameConfig:gameConfig,_userConfig:userConfig,inputManager:InputManager,_board:board){
         this.gameConfig = _gameConfig;
         this.userConfig = _userConfig;
         this.inputManager = inputManager;
+        this.board = _board
     }
 }
 
@@ -110,14 +112,14 @@ export class gameManager{
         
         this.inputManager = inputManager||new InputManager(_userConfig);
 
-        this.game = new game(_gameConfig,_userConfig,this.inputManager);
-        if(_gameConfig.twoplayer)
-            this.game2 = new game(_gameConfig,_userConfig,this.inputManager);
-
         const _matrix = new matrix(_gameConfig);
         const piecespawnlocation = new vector2(Math.ceil(_gameConfig.width/2) - 1,_gameConfig.height).add(_gameConfig.spawnOffset);
         this.board = new board(_matrix,piecespawnlocation)
         this.board.boundstype = _gameConfig.boundstype
+
+        this.game = new game(_gameConfig,_userConfig,this.inputManager,this.board);
+        if(_gameConfig.twoplayer)
+            this.game2 = new game(_gameConfig,_userConfig,this.inputManager,this.board);
 
         this.pieceChoice = clone(_gameConfig.pieceChoice);
         this.pieceChoice.Seed(seed)
@@ -199,6 +201,9 @@ export class gameManager{
         this.movementManager.onLockLike.push((pieceless:true)=>{
             this.OnLockLike(pieceless);
         });
+
+        this.EvaluateMission()
+        
     }
 
     //pieces stuff
@@ -640,8 +645,6 @@ export class gameManager{
         else if (lines > 0)
             this.garbageelapsed -= this.game.gameConfig.garbagehesitation;
 
-        
-        this.EvaluateMission();
         if(this.game.pieces % 7 == 0 && this.game.gameConfig.twoplayer && !this.game.gameOver){
             var a = this.game
             this.game = this.game2 as game
@@ -654,6 +657,8 @@ export class gameManager{
         }
         this.initialare = this.areelapsed;
         this.StepAre(0);
+        
+        this.EvaluateMission();
     }
 
     PlacementCouldKill(shift=vector2.zero){
