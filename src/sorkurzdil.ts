@@ -406,7 +406,7 @@ export class gameManager{
     }
 
     ClearWound(counts:number){
-        for(let y=0; y<this.board.matrix.effectiveHeight+1; y++){
+        for(let y=0; y<this.board.matrix.effectiveUp+1; y++){
             for(let x=0; x<this.board.matrix.width; x++){
                 let i = new vector2(x,y);
                 const _tile = this.board.matrix.GetTile(i);
@@ -430,6 +430,9 @@ export class gameManager{
             if(packet.entrance < this.game.gameConfig.garbageentry) continue;
             if(packet.ripen < this.game.gameConfig.garbageripen) continue;
 
+            if(this.game.gameConfig.piecewaitsforgarbage)
+                this.waitingforgarbage = true
+            
             if(packet.lines <= toEnter){
                 toEnter -= packet.lines
                 this.garbagebuffer.push(packet)
@@ -779,16 +782,29 @@ export class gameManager{
     
     areelapsed = 0;
 
+    waitingforgarbage=false;
+
     StepAre(deltaTime:number){
-        this.areelapsed += deltaTime;
         
         var useare = this.game.gameConfig.are;
         if(this.lineclearare)
             useare = this.game.gameConfig.lineclearare;
+        
+        if(this.areelapsed < useare)
+            this.areelapsed += deltaTime;
+
         if(this.areelapsed >= useare){
             this.ClearLineAndShiftActive();
 
             if(this.game.gameConfig.piecewaitsforgarbage && (this.garbagebuffer.length > 0 || this.currentpacket)) return
+            
+            if(this.waitingforgarbage){
+                this.waitingforgarbage = false
+                this.areelapsed -= this.game.gameConfig.piecewaitgarbagefinalare
+                
+                if(this.areelapsed < useare)
+                    return
+            }
             this.board.activepiece = this.PopQueue();
             this.movementManager.SpawnPiece();
 

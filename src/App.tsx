@@ -11,7 +11,7 @@ import configs from './configprefabs.ts'
 import { kickSystems } from './rotationsystems.ts';
 import TextDisplay from './debugu.tsx'
 import { boundstype, tile } from './board.ts';
-import { BaseGarbageGenerator, Decheese, LinesGenerator as LinesGarbage, SpecklesGarbage, WidthGarbage } from './garbagegeneration.ts';
+import { BaseGarbageGenerator, DebrisGarbage, Decheese, LinesGenerator as LinesGarbage, SpecklesGarbage, WidthGarbage } from './garbagegeneration.ts';
 import { AdhereToGlue } from './gimmicks.ts';
 import { BaseLineGenerator, Damnation, MessyLines, NwideHolesLines, OneBlockLine, StraightsLines } from './garbagelinetypes.ts';
 import { BasePieceGenerator, Fool } from './piecechoice.ts';
@@ -42,9 +42,9 @@ _gameConfig.debug = true;
 //_gameConfig.pieceChoice = new BasePieceGenerator(bagprefabs.m123)
 //_gameConfig.pieceChoice = new BasePieceGenerator(bagprefabs.tetraplets)
 
-_gameConfig.boundstype = boundstype.wallless
+//_gameConfig.boundstype = boundstype.wallless
 //_gameConfig.allowAirLock = true
-_gameConfig.vpcclearsall = false
+//_gameConfig.vpcclearsall = false
 
 //_gameConfig.initialisegarbage = [
 //  new garbagePacket(4,new LinesGarbage(new MessyLines())),
@@ -52,9 +52,16 @@ _gameConfig.vpcclearsall = false
 //  new garbagePacket(4),
 //]
 
-_gameConfig.garbageChoice = new Decheese(new WidthGarbage(),new LinesGarbage(new StraightsLines()), 1)
+//_gameConfig.garbageChoice = new Decheese(new WidthGarbage(),new LinesGarbage(new StraightsLines()), 1)
+_gameConfig.garbageChoice = new DebrisGarbage(new BasePieceGenerator(bagprefabs.tetrominos))
 
-_gameConfig.backfire = 1
+_gameConfig.garbageare = 100
+_gameConfig.piecewaitsforgarbage = true
+
+_gameConfig.backfire = 2
+_gameConfig.garbageripen = 8000
+
+_gameConfig.name = "debris garbage (backfire)"
 
 //_gameConfig.Splice(configs.m123)
 
@@ -149,6 +156,8 @@ function Update(canvas:HTMLCanvasElement,timestamp:number,deltaTime:number){
   ctx.fillText("Sul|fir ",canvas.width/2-1600,canvas.height/2-600);
 }
 
+var currgameconfig = new gameConfig();
+
 function App() {
   const debugu = useRef<any|null>(null);
 
@@ -159,11 +168,11 @@ function App() {
   const [scene,setScene] = useState("mainmenu")
 
   function StartGame(debugus,gamemode?:gameConfig){
-    _gameConfig = gamemode||(singleplayergame?.game.gameConfig)||new gameConfig()
+    currgameconfig = gamemode||(singleplayergame?.game.gameConfig)||new gameConfig()
 
     setScene("ingame")
     inputManager = new InputManager(_userConfig);
-    singleplayergame = new gameManager(debugus,_gameConfig ,_userConfig,inputManager);
+    singleplayergame = new gameManager(debugus,currgameconfig ,_userConfig,inputManager);
     singleplayergame.game.gameOver = false
     if(gameRef.current)
       gameRef.current.Reset()
@@ -201,7 +210,7 @@ function App() {
     //input management stuff and also R and Esc
     let keydown = (e)=>{
       if(e.code === "KeyR" && scene == "ingame"){
-        StartGame(debugu,_gameConfig);
+        StartGame(debugu,currgameconfig);
         return;
       }
       if(e.code === "Escape"){
@@ -267,12 +276,15 @@ function App() {
     <div className="App">
       <TextDisplay ref={debugu}/>
       <canvas ref={menuCanvasRef} width="4550px" height="2560px"/>
-      <button style={{transform: "translate(-30vw, -50%)"}} onClick={()=>{
-        StartGame(debugu,_gameConfig);
-      }}>play</button>
       <button style={{transform: "translate(-30vw, -50%) translate(0,-10vh)"}} onClick={()=>{
         setScene("2")
       }}>level select</button>
+      <button style={{transform: "translate(-30vw, -50%)"}} onClick={()=>{
+        StartGame(debugu,currgameconfig);
+      }}>play last: {currgameconfig.name}</button>
+      <button style={{transform: "translate(-30vw, -50%) translate(0,10vh)"}} onClick={()=>{
+        StartGame(debugu,_gameConfig);
+      }}>play special: {_gameConfig.name}</button>
     </div>
   );
 }

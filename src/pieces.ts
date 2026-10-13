@@ -186,6 +186,17 @@ export class piece{
     }
   }
 
+  /**all of these have positive sign */
+  get extents():uncenteredRectangle{
+    var boundingrectangle = this.boundingrectangle
+    return {
+      north:boundingrectangle.north,
+      east:boundingrectangle.east,
+      south:-boundingrectangle.south,
+      west:-boundingrectangle.west,
+    }
+  }
+
   static fromString(id:string,tilepicture:string,tileModel:tileModel,name:string=id,_kickType=kickType.auto){
     const robot = new piece(id,[],tileModel,_kickType,name,SpinType.immobilespin)
 

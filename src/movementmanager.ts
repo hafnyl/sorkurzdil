@@ -206,7 +206,7 @@ export default class MovementManager{
                 this.LockLike()
                 return dropHeight
             }
-            if(dropHeight + this.board.activeposition.y + this.board.activepiece.boundingrectangle.north <= this.board.matrix.lowvanishingpoint){
+            if(dropHeight + this.board.activeposition.y + this.board.activepiece.extents.north <= this.board.matrix.lowvanishingpoint){
                 this.LockLike()
                 return dropHeight
             }
@@ -419,9 +419,9 @@ export default class MovementManager{
 
         if(inbounds && this.game.gameConfig.dasstopatbounds){
             if(command==Command.ShiftLeft)
-                deltaSteps = Math.max(0,Math.min(deltaSteps,this.board.activeposition.x + this.board.activepiece.boundingrectangle.west))
+                deltaSteps = Math.max(0,Math.min(deltaSteps,this.board.activeposition.x - this.board.activepiece.extents.west))
             else
-                deltaSteps = Math.max(0,Math.min(deltaSteps,this.board.matrix.width - this.board.activeposition.x - this.board.activepiece.boundingrectangle.east - 1))
+                deltaSteps = Math.max(0,Math.min(deltaSteps,this.board.matrix.width - this.board.activeposition.x - this.board.activepiece.extents.east - 1))
         } else
             deltaSteps = Math.min(deltaSteps,this.board.matrix.width)
 
@@ -850,7 +850,7 @@ export default class MovementManager{
             this.WhileInAir(deltaTime);
         }
 
-        if(this.board.activepiece && this.board.activeposition.y + this.board.activepiece.boundingrectangle.north <= this.board.matrix.lowvanishingpoint)
+        if(this.board.activepiece && this.board.activeposition.y + this.board.activepiece.extents.north <= this.board.matrix.lowvanishingpoint)
             this.LockLike()
     }
 }

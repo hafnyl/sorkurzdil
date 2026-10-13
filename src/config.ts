@@ -344,7 +344,7 @@ export enum b2btype{
 }
 
 export enum spinDetection{
-    tspin,
+    tspin = 1,
     threecorner,
     allmini,
     allminiandimmobile,
@@ -353,7 +353,7 @@ export enum spinDetection{
 }
 
 export enum alignYType{
-    top,
+    top = 1,
     COR,
     bottom,
 }
@@ -367,6 +367,8 @@ export const roundingTypes:{[key:string]:(x:number)=>number} = Object.freeze({
 })
 
 export class gameConfig{
+    name="default";
+
     width=10;
     height=20;
 
@@ -490,6 +492,7 @@ export class gameConfig{
     comboBlocking = true;
     attackCancelling = true;
     piecewaitsforgarbage = false;
+    piecewaitgarbagefinalare = 1000;
 
     //functions to pass the board through before and after locks
     prelock:gimmick[] = [];
@@ -534,7 +537,9 @@ export class gameConfig{
                 return
             }
 
-            if(e == "pieceChoice"){
+            if(e == "name")
+                this.name = this.name + " + " + other.name;
+            else if(e == "pieceChoice"){
                 if(other[e].constructor != judge[e].constructor || other[e].baghash != judge[e].baghash)
                     this[e] = other[e];
             }
@@ -566,7 +571,7 @@ export class gameConfig{
 }
 
 export enum Command{
-    ShiftLeft,
+    ShiftLeft = 1,
     ShiftRight,
     ShiftDown,
     ShiftUp,
@@ -595,7 +600,7 @@ export enum Command{
 }
 
 export enum cameraMode{
-    focusActive,
+    focusActive = 1,
     focusGhost,
     focusWholeBoard,
     fixed,

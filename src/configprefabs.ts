@@ -34,6 +34,8 @@ export default class configprefabs{
         _gameConfig.spawnOffset = new vector2(0,-1);
         _gameConfig.droughteligible = true;
 
+        _gameConfig.name = "master"
+
         return _gameConfig
     }
 
@@ -41,6 +43,8 @@ export default class configprefabs{
         let _gameConfig = new gameConfig()
         _gameConfig.mission = missions.lines(40);
         _gameConfig.scorer = scorers.speed;
+
+        _gameConfig.name = "40l sprint"
 
         return _gameConfig
     }
@@ -52,6 +56,8 @@ export default class configprefabs{
         _gameConfig.cheeselimit = 40
         _gameConfig.scorer = scorers.speed;
 
+        _gameConfig.name = "40l dig"
+
         return _gameConfig
     }
 
@@ -61,6 +67,8 @@ export default class configprefabs{
         _gameConfig.height = 10
         _gameConfig.boardscalar = new vector2(2,2)
 
+        _gameConfig.name = "big"
+
         return _gameConfig
     }
 
@@ -69,6 +77,8 @@ export default class configprefabs{
         _gameConfig.allowFlips = true;
         _gameConfig.pieceChoice = new BasePieceGenerator(bagprefabs.freeTetrominos);
 
+        _gameConfig.name = "free tetrominos"
+
         return _gameConfig
     }
 
@@ -76,6 +86,8 @@ export default class configprefabs{
         let _gameConfig = new gameConfig()
         _gameConfig.allowRotation = false;
         _gameConfig.pieceChoice = new BasePieceGenerator(bagprefabs.fixedTetrominos);
+
+        _gameConfig.name = "fixed tetrominos"
 
         return _gameConfig
     }
@@ -93,6 +105,8 @@ export default class configprefabs{
 
         _gameConfig.width = 8
         _gameConfig.height = 8
+
+        _gameConfig.name = "blast"
 
         return _gameConfig
     }
@@ -117,6 +131,8 @@ export default class configprefabs{
         new garbagePacket(1),
         ]
 
+        _gameConfig.name = "the warlock"
+
         return _gameConfig
     }
 
@@ -126,6 +142,8 @@ export default class configprefabs{
         _gameConfig.magicianwounds = 1
         _gameConfig.keeplastlineclear = true;
 
+        _gameConfig.name = "the magician"
+
         return _gameConfig
     }
 
@@ -133,6 +151,8 @@ export default class configprefabs{
         let _gameConfig = new gameConfig()
 
         _gameConfig.constraints.push(constraints.b2bhealth)
+
+        _gameConfig.name = "tech"
 
         return _gameConfig
     }
@@ -143,6 +163,8 @@ export default class configprefabs{
         _gameConfig.techpluswounds = 20
         _gameConfig.difficultlinecleartype = difficultlinecleartype.tech
 
+        _gameConfig.name = "tech+"
+
         return _gameConfig
     }
 
@@ -151,6 +173,8 @@ export default class configprefabs{
 
         _gameConfig.gravity = 0;
         _gameConfig.levelLocktimes = true;
+
+        _gameConfig.name = "freefall"
 
         return _gameConfig
     }
@@ -161,6 +185,20 @@ export default class configprefabs{
         _gameConfig.mission = missions.lines(4*7);
         _gameConfig.scorer = scorers.pc;
         _gameConfig.constraints.push(constraints['4hpc'])
+
+        _gameConfig.name = "7 pc"
+
+        return _gameConfig
+    }
+
+    static get allpc40(){
+        let _gameConfig = new gameConfig()
+        
+        _gameConfig.mission = missions.lines(40);
+        _gameConfig.scorer = scorers.pc;
+        _gameConfig.constraints.push(constraints['4hpc'])
+
+        _gameConfig.name = "10 pc"
 
         return _gameConfig
     }
@@ -178,6 +216,8 @@ export default class configprefabs{
 
         _gameConfig.garbageare = 500
         _gameConfig.garbageripen = 500
+
+        _gameConfig.name = "survival"
 
         return _gameConfig
     }
@@ -198,6 +238,8 @@ export default class configprefabs{
 
         _gameConfig.scorer = scorers.survival
 
+        _gameConfig.name = "survival alt"
+
         return _gameConfig
     }
 
@@ -206,6 +248,8 @@ export default class configprefabs{
 
         _gameConfig.twoplayer = true
         _gameConfig.mission = missions.attack(20)
+
+        _gameConfig.name = "swap"
 
         return _gameConfig
     }
@@ -222,6 +266,8 @@ export default class configprefabs{
         _gameConfig.wavetype = wavetype.onexhaust
         _gameConfig.garbageripen = 16000
 
+        _gameConfig.name = "survival alt alt"
+
         return _gameConfig
     }
 
@@ -231,6 +277,8 @@ export default class configprefabs{
         _gameConfig.garbageChoice = new LinesGenerator(new Bombs());
         _gameConfig.prelock.push(MarkBombClears)
         //_gameConfig.garbageType = tile.hardy
+
+        _gameConfig.name = "bombs"
         
         return _gameConfig
     }
@@ -245,6 +293,8 @@ export default class configprefabs{
         _gameConfig.garbageare = 100
         _gameConfig.garbagecap = 0
         _gameConfig.piecewaitsforgarbage = true
+
+        _gameConfig.name = "damnation"
         
         return _gameConfig
     }

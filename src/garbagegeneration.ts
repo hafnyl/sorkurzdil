@@ -133,12 +133,14 @@ export class WidthGarbage extends BaseGarbageGenerator{
     }
 }
 
-/*export class DebrisGarbage extends BaseGarbageGenerator{
-    pieceChoice:BasePieceGenerator
+export class DebrisGarbage extends BaseGarbageGenerator{
+    pieceChoice:BasePieceGenerator;
+    lowbias:number;
 
-    constructor(pieceChoice:BasePieceGenerator){
+    constructor(pieceChoice:BasePieceGenerator,lowbias=2){
         super()
         this.pieceChoice = pieceChoice
+        this.lowbias = lowbias
     }
 
     Seed(seed:number) {
@@ -154,16 +156,63 @@ export class WidthGarbage extends BaseGarbageGenerator{
             this.SetGarbageTile(_board,_garbageType,position.add(i))
     }
 
-    DropPiece(){
-        
+    SetPiece(_board:board,_garbageType:dualGarbageType){
+        var _piece = this.pieceChoice.Next()
+
+        var exhaust = 0
+        while(true){
+            exhaust++
+            if(exhaust > 3000)
+                throw new Error("this has to be intentional")
+            
+            var position = new vector2(_board.spawnlocation.x,_board.matrix.effectiveUp)
+
+            _piece.RotateTo(Math.floor(Math.random() * 4))
+
+            position = new vector2(position.x,position.y + _piece.extents.south)
+
+            const workablearea = _board.matrix.width - _piece.extents.west - _piece.extents.east
+            if(workablearea <= 0)
+                continue
+            
+            const xoffsets:number[] = []
+            var totalchance:number = 0
+
+            for(let xoff = 0; xoff < workablearea; xoff++){
+                const thisheight = _board.matrix.ColumnHighest(_piece.extents.west + xoff);
+                const chance = Math.pow(this.lowbias,-thisheight);
+                xoffsets.push(chance);
+                totalchance += chance;
+            }
+
+            if(totalchance <= 0)
+                throw new Error("how")
+            
+            for(let xoff = 0; xoff < workablearea; xoff++){
+                if(Math.random() >= (xoffsets[xoff] / totalchance)){
+                    totalchance -= xoffsets[xoff];
+                    continue
+                }
+                position = new vector2(_piece.extents.west + xoff,position.y)
+                break
+            }
+
+            position = position.add(_board.DropHeight(_piece,position))
+
+            if(_board.matrix.PieceLineClears(_piece,position) > 0)
+                continue
+            
+            this.SetGarbagePiece(_board,_garbageType,_piece,position)
+            break
+        }
     }
 
     Write(_board:board,_garbageType:dualGarbageType,numberlines:number){
         for (let i = 0; i < numberlines; i++) {
-            this.DropPiece()
+            this.SetPiece(_board,_garbageType)
         }
     }
-}*/
+}
 
 export class Decheese extends BaseGarbageGenerator{
     cheese:BaseGarbageGenerator;

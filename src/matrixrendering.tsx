@@ -228,7 +228,6 @@ export default class MatrixRendering {
     CoordsToScreenPos(coords:vector2){
         const _drawnMatrix = this.drawnMatrix();
         
-        const originX = - (_drawnMatrix.x - this.boardtilesize.x) / 2, originY = + (_drawnMatrix.y - this.boardtilesize.y) / 2
         const origin = _drawnMatrix.sub(this.boardtilesize).flip().div(2)
         
         return flipy(origin.add(this.FSTL(coords)).add(this.framewidth).add(coords.hadamard(this.gridwidth)))

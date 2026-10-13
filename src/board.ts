@@ -68,7 +68,7 @@ export class matrix{
     toclear:lineToclear[]=[];
     width:number;
     height:number;
-    effectiveHeight:number;
+    effectiveUp:number;
     effectiveLeft:number;
     effectiveRight:number;
     effectiveDown:number;
@@ -77,11 +77,11 @@ export class matrix{
 
     gameConfig:gameConfig;
     
-    get useHeight():number{
+    get useUp():number{
         if(this.gameConfig.extendheight < 0)
-            return this.effectiveHeight
+            return this.effectiveUp
         else
-            return Math.min(this.effectiveHeight,this.height + this.gameConfig.extendheight)
+            return Math.min(this.effectiveUp,this.height + this.gameConfig.extendheight)
     }
 
     get useLeft():number{
@@ -91,7 +91,7 @@ export class matrix{
             return 0
     }
 
-    get useLength():number{
+    get useRight():number{
         if(this.gameConfig.extendclearxrequirement)
             return Math.max(this.width,this.effectiveRight)
         else
@@ -109,12 +109,14 @@ export class matrix{
     {
         this.width = _gameConfig.width;
         this.height = _gameConfig.height;
-        this.effectiveHeight = 0;
+        this.effectiveUp = 0;
         this.effectiveDown = 0;
         this.effectiveLeft = 0;
         this.effectiveRight = _gameConfig.width;
         this.gameConfig = _gameConfig
     }
+
+    //basic function
 
     Hash(_vector2:vector2):string{
         return _vector2.x + " " + _vector2.y
@@ -144,7 +146,7 @@ export class matrix{
 
     UpdateEffectiveExtents(){
         const extents = this.Extents()
-        this.effectiveHeight = extents.north + 1
+        this.effectiveUp = extents.north + 1
         this.effectiveRight = extents.east + 1
         this.effectiveDown = extents.south
         this.effectiveLeft = extents.west
@@ -179,7 +181,7 @@ export class matrix{
 
         this.hashtable[key] = _tile
 
-        this.effectiveHeight = Math.max(this.effectiveHeight,coords.y + 1);
+        this.effectiveUp = Math.max(this.effectiveUp,coords.y + 1);
 
         if(!updatesuppressed)
             this.OnBoardUpdate()
@@ -205,6 +207,8 @@ export class matrix{
         if(!updatesuppressed)
             this.OnBoardUpdate()
     }
+
+    //doesnt modify the board
 
     /*cannot be rendered*/
     IsUnrenderable(coords:vector2) {
@@ -252,7 +256,7 @@ export class matrix{
     }
 
     VirtualPC(){
-        for (let y=this.effectiveHeight - 1; y>=0; y--)
+        for (let y=this.effectiveUp - 1; y>=0; y--)
             for (let x=0; x<this.width; x++)
                 {
                     const tile = this.GetTile(new vector2(x,y));
@@ -279,6 +283,82 @@ export class matrix{
         }
         return true
     }
+
+    GarbageLineCount(){
+        let garbagelines = 0;
+        for(let y=0; y<this.effectiveUp; y++){
+            let isgarbage = false
+            for(let x=0; x<this.width; x++){
+                let i = new vector2(x,y);
+                let thile = this.GetTile(i);
+                if(this.IsUnrenderable(i) || !thile) continue
+                if(thile.isGarbage){
+                    isgarbage = true
+                    break
+                }
+            }
+            if(!isgarbage) continue
+            garbagelines++;
+        }
+        return garbagelines;
+    }
+
+    CountEmpties(y:number){
+        var empties = 0
+        for(let x=0; x<this.width; x++){
+            let i = new vector2(x,y);
+            let thile = this.GetTile(i);
+            if(thile&&!this.IsUnrenderable(i)) continue
+            empties += 1
+        }
+        return empties
+    }
+
+    ClearEligible(i:vector2){ // too lazy to fit this into the currect clear mechanism right now but it would look cleaner i think
+        let _tile = this.GetTile(i);
+        if(!_tile) return false; //this only works because if one tile isnt here we dont have to check that the rest is complete!!!
+        if(!_tile.countstoclear) return false;
+        const death = _tile.death;
+        if(death !== undefined) return false;
+        return true
+    }
+
+    PieceLineClears(_piece:piece,position:vector2){
+        const uniqueylevels:number[] = []
+        const pieceoccupies:string[] = []
+        for(const off of _piece.tileoffsets){
+            const i = off.add(position)
+            if(!uniqueylevels.includes(i.y))
+                uniqueylevels.push(i.y)
+            pieceoccupies.push(i.toString())
+        }
+
+        var lineclears = 0
+
+        for(const y of uniqueylevels){
+            let lineclear = true
+            for (let x = this.useLeft; x < this.useRight; x++) {
+                if(this.ClearEligible(new vector2(x,y)) || pieceoccupies.includes(new vector2(x,y).toString())) continue
+                lineclear = false
+                break
+            }
+
+            if(lineclear)
+                lineclears++
+        }
+
+        return lineclears
+    }
+
+    ColumnHighest(x:number){
+        for (let y = this.effectiveUp - 1; y >= this.effectiveDown; y--) {
+            if(!this.IsValid(new vector2(x,y)))
+                return y
+        }
+        return this.effectiveDown - 1
+    }
+
+    //modifies the board
 
     ClearPerfect(){
         for(const [k,i] of Object.entries(this.hashtable)){
@@ -327,7 +407,7 @@ export class matrix{
             if(i.row >= fromY)
                 i.row++
                 
-        this.effectiveHeight ++;
+        this.effectiveUp ++;
 
         this.OnBoardUpdate(false)
     }
@@ -362,7 +442,7 @@ export class matrix{
 
     ClearLinesIncludeVert(minDeadFor=0){
         for(let eks=0; eks<this.width; eks++){
-            for(let why=0; why<this.effectiveHeight; why++){
+            for(let why=0; why<this.effectiveUp; why++){
                 let i = new vector2(eks,why);
                 const _tile = this.GetTile(i);
                 if(!_tile)continue;
@@ -378,7 +458,7 @@ export class matrix{
     MarkClears(){
         let lineclears = 0;
         let diglineclears = 0;
-        for(let y=this.effectiveDown; y<this.effectiveHeight; y++){
+        for(let y=this.effectiveDown; y<this.effectiveUp; y++){
             const _tile = this.GetTile(new vector2(0,y));
             if(!_tile) continue; //this only works because if one tile isnt here we dont have to check that the rest is complete!!!
             if(!_tile.countstoclear) continue;
@@ -388,7 +468,7 @@ export class matrix{
 
             let isdig = false;
 
-            for(let x=this.useLeft; x<this.useLength; x++){
+            for(let x=this.useLeft; x<this.useRight; x++){
                 let i = new vector2(x,y);
                 let thile = this.GetTile(i);
                 if(this.IsUnrenderable(i) || !thile || !thile.countstoclear){
@@ -447,45 +527,6 @@ export class matrix{
         return lineclears;
     }
 
-    GarbageLineCount(){
-        let garbagelines = 0;
-        for(let y=0; y<this.effectiveHeight; y++){
-            let isgarbage = false
-            for(let x=0; x<this.width; x++){
-                let i = new vector2(x,y);
-                let thile = this.GetTile(i);
-                if(this.IsUnrenderable(i) || !thile) continue
-                if(thile.isGarbage){
-                    isgarbage = true
-                    break
-                }
-            }
-            if(!isgarbage) continue
-            garbagelines++;
-        }
-        return garbagelines;
-    }
-
-    CountEmpties(y:number){
-        var empties = 0
-        for(let x=0; x<this.width; x++){
-            let i = new vector2(x,y);
-            let thile = this.GetTile(i);
-            if(thile&&!this.IsUnrenderable(i)) continue
-            empties += 1
-        }
-        return empties
-    }
-
-    ClearEligible(i:vector2){ // too lazy to fit this into the currect clear mechanism right now but it would look cleaner i think
-        let _tile = this.GetTile(i);
-        if(!_tile) return false; //this only works because if one tile isnt here we dont have to check that the rest is complete!!!
-        if(!_tile.countstoclear) return false;
-        const death = _tile.death;
-        if(death !== undefined) return false;
-        return true
-    }
-
     GreyAll(){
         const nonempties = this.GetAllRenderablePositions()
         for(const i of nonempties){
@@ -507,10 +548,10 @@ export class matrix{
 }
 
 export enum boundstype{
+    boundless,
     normal,
     wallless,
     floorless,
-    boundless,
     tower,
     platform,
 }
@@ -575,7 +616,7 @@ export class board{
         return this.InBounds(position.add(direction.normalise().mul(this.matrix.width * this.matrix.height)))
     }
 
-        PieceNoncolliding(shift:vector2,_piece:piece,position:vector2,_boundstype:boundstype=this.boundstype){
+    PieceNoncolliding(shift:vector2,_piece:piece,position:vector2,_boundstype:boundstype=this.boundstype){
         if(!this.PieceInBounds(shift,_piece,position,_boundstype)) return false
         for (let i=0; i<_piece.tileoffsets.length; i++){
             const offset = _piece.tileoffsets[i];
