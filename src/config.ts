@@ -395,7 +395,7 @@ export class gameConfig{
     twoplayer = false;
     swapplayerare = 750;
 
-    boundstype=boundstype.normal;
+    boundstype=boundstype.dynamic;
     boundlessretainboundedkicksbounded=true; // if the boundstype lets you go past the left and right, but the piece is still within bounds, on rotation you can kick off of the walls
     boundlessdropsusefloorbounded=true; // if boundstype lets you fall into the void within the walls of the matrix, sonic dropping and harddropping would keep you in bounds (but not softdropping)
     dasstopatbounds=true; // if its true it makes finesse possible again

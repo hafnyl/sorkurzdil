@@ -189,8 +189,8 @@ export default class MovementManager{
             return Number.POSITIVE_INFINITY
 
         var usebounds = this.board.boundstype
-        if((this.board.boundstype !== boundstype.normal) && this.game.gameConfig.boundlessdropsusefloorbounded && this.board.PieceInBounds(vector2.zero,this.board.activepiece,this.board.activeposition,boundstype.normal))
-            usebounds = boundstype.normal;
+        if((this.board.boundstype !== boundstype.strict) && this.game.gameConfig.boundlessdropsusefloorbounded && this.board.PieceInBounds(vector2.zero,this.board.activepiece,this.board.activeposition,boundstype.strict))
+            usebounds = boundstype.strict;
 
         var dropHeight = 0
         while(true){
@@ -290,8 +290,8 @@ export default class MovementManager{
         turns = (turns + 4) % 4
 
         var usebounds = this.board.boundstype
-        if((this.board.boundstype !== boundstype.normal) && this.game.gameConfig.boundlessretainboundedkicksbounded && this.board.PieceInBounds(vector2.zero,_piece,position,boundstype.normal))
-            usebounds = boundstype.normal;
+        if((this.board.boundstype !== boundstype.strict) && this.game.gameConfig.boundlessretainboundedkicksbounded && this.board.PieceInBounds(vector2.zero,_piece,position,boundstype.strict))
+            usebounds = boundstype.strict;
 
         let rotatedPiece = _piece.rotated(turns)
 
@@ -546,6 +546,7 @@ export default class MovementManager{
         this.lockcancelsused = 0;
         this.spineligible = false;
         this.minieligible = false;
+        this.clutcheligible = false
         this.justlodged = false
 
         this.game.flags.piecechange = true;
@@ -702,8 +703,6 @@ export default class MovementManager{
             return
         if(this.game.gameConfig.verticallineclears && !this.board.PieceStrictlyInBounds(vector2.zero,this.board.activepiece,this.board.activeposition))
             return
-
-        this.clutcheligible = false
 
         var [spin, mini, immobile] = this.SpinDetection()
         if (!this.spineligible)

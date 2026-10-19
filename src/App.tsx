@@ -16,6 +16,7 @@ import { AdhereToGlue } from './gimmicks.ts';
 import { BaseLineGenerator, Damnation, MessyLines, NwideHolesLines, OneBlockLine, StraightsLines } from './garbagelinetypes.ts';
 import { BasePieceGenerator, Fool } from './piecechoice.ts';
 import { tileModels } from './tilemodels.ts';
+import sfxs, { sfx, playback } from './sfxmanager.ts'
 
 const FPS = 120;
 
@@ -52,16 +53,17 @@ _gameConfig.debug = true;
 //  new garbagePacket(4),
 //]
 
-//_gameConfig.garbageChoice = new Decheese(new WidthGarbage(),new LinesGarbage(new StraightsLines()), 1)
+_gameConfig.garbageChoice = new Decheese(new DebrisGarbage(new BasePieceGenerator(bagprefabs.tetrominos)),new LinesGarbage(new StraightsLines()), 1)
 //_gameConfig.garbageChoice = new DebrisGarbage(new BasePieceGenerator(bagprefabs.tetrominos))
-//
-//_gameConfig.garbageare = 100
-//_gameConfig.piecewaitsforgarbage = true
-//
-//_gameConfig.backfire = 2
-//_gameConfig.garbageripen = 8000
 
-_gameConfig.Splice(configs.allpc28)
+_gameConfig.garbageare = 100
+_gameConfig.piecewaitsforgarbage = true
+
+_gameConfig.backfire = 1
+//_gameConfig.garbageripen = 8000
+_gameConfig.name = "void pvp backfire"
+
+//_gameConfig.Splice(configs.allpc28)
 
 //_gameConfig.Splice(configs.m123)
 
@@ -156,7 +158,20 @@ function Update(canvas:HTMLCanvasElement,timestamp:number,deltaTime:number){
   ctx.fillText("Sul|fir ",canvas.width/2-1600,canvas.height/2-600);
 }
 
+function OnStart(){
+  starttime = Date.now();
+  //sfxs.PlayPBobject(sfxs.GetPitch(2,0).withspeed(0.2))
+  sfxs.PlayPBobject(sfxs.GetSFX(sfx.noise0).withspeed(1))
+}
+
 var currgameconfig = new gameConfig();
+
+enum scenes{
+  start,
+  menu,
+  levelselect,
+  ingame,
+}
 
 function App() {
   const debugu = useRef<any|null>(null);
@@ -165,12 +180,15 @@ function App() {
 
   const gameRef = useRef<any|null>(null);
 
-  const [scene,setScene] = useState("mainmenu")
+  const [scene,setScene] = useState(scenes.start)
+  const [lastScene,setLastScene] = useState(scenes.menu)
 
   function StartGame(debugus,gamemode?:gameConfig){
+    setLastScene(scene)
+
     currgameconfig = gamemode||(singleplayergame?.game.gameConfig)||new gameConfig()
 
-    setScene("ingame")
+    setScene(scenes.ingame)
     inputManager = new InputManager(_userConfig);
     singleplayergame = new gameManager(debugus,currgameconfig ,_userConfig,inputManager);
     singleplayergame.game.gameOver = false
@@ -209,12 +227,16 @@ function App() {
 
     //input management stuff and also R and Esc
     let keydown = (e)=>{
-      if(e.code === "KeyR" && scene == "ingame"){
+      if(e.code === "KeyR" && scene == scenes.ingame){
         StartGame(debugu,currgameconfig);
         return;
       }
-      if(e.code === "Escape"){
-        setScene("0")
+      if(e.code === "Escape" && scene != scenes.start && scene != scenes.menu){
+        if(lastScene == scenes.menu)
+          sfxs.PlayPBobject(sfxs.GetPitch(0,0).withspeed(0.2));
+        else
+          sfxs.PlayPBobject(sfxs.GetPitch(0,1).withspeed(0.2));
+        setScene(lastScene)
         return;
       }
 
@@ -235,7 +257,7 @@ function App() {
     };
   },[debugu,menuCanvasRef,gameRef,scene]);
 
-  if(scene == "ingame"){
+  if(scene == scenes.ingame){
     return (
       <div className="App">
         <TextDisplay ref={debugu}/>
@@ -248,7 +270,10 @@ function App() {
       singleplayergame = null
   }
 
-  if(scene == "2"){
+  if(scene == scenes.levelselect){
+    if(lastScene != scenes.menu)
+      setLastScene(scenes.menu)
+
     return (
       <div className="App">
         <TextDisplay ref={debugu}/>
@@ -265,26 +290,41 @@ function App() {
           StartGame(debugu,configs.big);
         }}>play big</button>
         <button style={{transform: "translate(-30vw, -50%) translate(0,30vh)"}} onClick={()=>{
-          setScene("menu")
+          setScene(scenes.menu)
+          sfxs.PlayPBobject(sfxs.GetPitch(0,0).withspeed(0.2));
         }}>back</button>
       </div>
     );
   }
 
-  //this is the menu
+  if(scene == scenes.menu){
+    return (
+      <div className="App">
+        <TextDisplay ref={debugu}/>
+        <canvas ref={menuCanvasRef} width="4550px" height="2560px"/>
+        <button style={{transform: "translate(-30vw, -50%) translate(0,-10vh)"}} onClick={()=>{
+          setScene(scenes.levelselect)
+          sfxs.PlayPBobject(sfxs.GetPitch(2,1).withspeed(0.2));
+        }}>level select</button>
+        <button style={{transform: "translate(-30vw, -50%)"}} onClick={()=>{
+          StartGame(debugu,currgameconfig);
+        }}>play last: {currgameconfig.name}</button>
+        <button style={{transform: "translate(-30vw, -50%) translate(0,10vh)"}} onClick={()=>{
+          StartGame(debugu,_gameConfig);
+        }}>play special: {_gameConfig.name}</button>
+      </div>
+    );
+  }
+
+  //starting page
   return (
     <div className="App">
       <TextDisplay ref={debugu}/>
-      <canvas ref={menuCanvasRef} width="4550px" height="2560px"/>
-      <button style={{transform: "translate(-30vw, -50%) translate(0,-10vh)"}} onClick={()=>{
-        setScene("2")
-      }}>level select</button>
-      <button style={{transform: "translate(-30vw, -50%)"}} onClick={()=>{
-        StartGame(debugu,currgameconfig);
-      }}>play last: {currgameconfig.name}</button>
-      <button style={{transform: "translate(-30vw, -50%) translate(0,10vh)"}} onClick={()=>{
-        StartGame(debugu,_gameConfig);
-      }}>play special: {_gameConfig.name}</button>
+      <p>Sul|fir</p>
+      <button onClick={()=>{
+        setScene(scenes.menu)
+        OnStart()
+      }}>start</button>
     </div>
   );
 }

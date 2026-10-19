@@ -549,7 +549,8 @@ export class matrix{
 
 export enum boundstype{
     boundless,
-    normal,
+    strict,
+    dynamic,
     wallless,
     floorless,
     tower,
@@ -566,7 +567,7 @@ export class board{
     activeup=vector2.up;
     activeright=vector2.right;
 
-    boundstype=boundstype.normal
+    boundstype=boundstype.dynamic
 
     constructor(_matrix:matrix,piecespawnlocation:vector2){
         this.matrix = _matrix;
@@ -597,11 +598,17 @@ export class board{
                 if(coords.y == -1 && coords.x >= 0 && coords.x < this.matrix.width)
                     return false
                 return true
+            case boundstype.strict:
+                if(coords.x < 0) return false;
+                if(coords.y < 0) return false;
+                if(coords.x >= this.matrix.width) return false;
+                return true
+            case boundstype.dynamic:
+                if(coords.x < this.matrix.useLeft) return false;
+                if(coords.y < 0) return false;
+                if(coords.x >= this.matrix.useRight) return false;
+                return true
         }
-        if(coords.x < 0) return false;
-        if(coords.y < 0) return false;
-        if(coords.x >= this.matrix.width) return false;
-        return true
     }
 
     InMatrix(coords:vector2):boolean{
@@ -666,8 +673,8 @@ export class board{
         let exhaust = 0
 
         var usebounds = this.boundstype
-        if((this.boundstype !== boundstype.normal) && this.matrix.gameConfig.boundlessdropsusefloorbounded && this.PieceInBounds(vector2.zero,_piece,position,boundstype.normal))
-            usebounds = boundstype.normal;
+        if((this.boundstype !== boundstype.strict) && this.matrix.gameConfig.boundlessdropsusefloorbounded && this.PieceInBounds(vector2.zero,_piece,position,boundstype.strict))
+            usebounds = boundstype.strict;
 
         while(this.PieceNoncolliding(dropHeight.add(dropdirection),_piece,position,usebounds) && this.PieceInBounds(dropHeight.add(dropdirection),_piece,position,usebounds)){
             dropHeight = dropHeight.add(dropdirection);

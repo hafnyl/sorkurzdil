@@ -11,6 +11,7 @@ import { BaseGarbageGenerator, LinesGenerator } from './garbagegeneration.ts';
 import { MessyLines, StraightsLines } from './garbagelinetypes.ts';
 import { BasePieceGenerator } from './piecechoice.ts';
 import { piece } from './pieces.ts';
+import sfxs, { sfx, playback } from './sfxmanager.ts'
 
 export class game{
     gameConfig:gameConfig;
@@ -935,6 +936,7 @@ export class gameManager{
                 this.gameDelay -= deltaTime
             const thissecond = Math.floor(this.gameDelay/1000)
             if(this.gameDelay <= 0){
+                sfxs.PlayPBobject(sfxs.GetPitch(1,3))
                 this.game.gameOn = true
                 this.game.flags.otheralerts.push({
                     time:0,
@@ -946,6 +948,7 @@ export class gameManager{
                 })
             }
             else if(lastsecond != thissecond){
+                sfxs.PlayPBobject(sfxs.GetPitch(1,0))
                 this.game.flags.otheralerts.push({
                     time:0,
                     code:"generic",
