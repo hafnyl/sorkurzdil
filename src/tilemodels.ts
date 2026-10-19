@@ -65,6 +65,8 @@ export function SafeColour(c:colour3|colourpossibility){
   return c
 }
 
+export type fumenid = 0|1|2|3|4|5|6|7|8
+
 export class tileModel{
   rectangles:filledRectangle[]=[];
   images:imageRectangle[]=[];
@@ -72,6 +74,7 @@ export class tileModel{
   grey:boolean=true;
   firstcolour:colour3=new colour3(0,0,0);
   whitebased:boolean=false;
+  fumenid:fumenid=8
   constructor(solidcolour?:colour3|colourpossibility){
     if(!solidcolour){
       this.isNull = true;
@@ -369,6 +372,12 @@ export class tileModel{
     robot.whitebased = true
     return robot;
   }
+
+  withFumenId(_fumenid:fumenid){
+    const robot = clone(this)
+    robot.fumenid = _fumenid
+    return robot;
+  }
 }
 
 export const tileModels = Object.freeze({
@@ -376,13 +385,13 @@ export const tileModels = Object.freeze({
   "garbage":tileModel.tripleRingTransparency(palette.one,palette.one),
   "garbage1":new tileModel(palette.one),
   "garbage2":tileModel.tripleRingTransparency(palette.one,undefined,palette.one),
-  "I":tileModel.blocks(palette.two,palette.one,palette.one,palette.one,palette.one),
-  "L":tileModel.blocks(palette.two,undefined,palette.one,undefined,undefined),
-  "O":tileModel.blocks(palette.one,palette.one,palette.one,palette.one,undefined).whiteBased(),
-  "Z":tileModel.blocks(palette.two,palette.two,palette.two,palette.two,palette.one),
-  "T":tileModel.blocks(palette.tri,palette.one,palette.one,palette.one,palette.one),
-  "J":tileModel.blocks(palette.tri,undefined,palette.one,undefined,undefined),
-  "S":tileModel.blocks(palette.tri,palette.tri,palette.tri,palette.tri,palette.one),
+  "I":tileModel.blocks(palette.two,palette.one,palette.one,palette.one,palette.one).withFumenId(1),
+  "L":tileModel.blocks(palette.two,undefined,palette.one,undefined,undefined).withFumenId(2),
+  "O":tileModel.blocks(palette.one,palette.one,palette.one,palette.one,undefined).whiteBased().withFumenId(3),
+  "Z":tileModel.blocks(palette.two,palette.two,palette.two,palette.two,palette.one).withFumenId(4),
+  "T":tileModel.blocks(palette.tri,palette.one,palette.one,palette.one,palette.one).withFumenId(5),
+  "J":tileModel.blocks(palette.tri,undefined,palette.one,undefined,undefined).withFumenId(6),
+  "S":tileModel.blocks(palette.tri,palette.tri,palette.tri,palette.tri,palette.one).withFumenId(7),
   "V":tileModel.fromString(`
   &
     
@@ -392,7 +401,7 @@ export const tileModels = Object.freeze({
     110111
     111101
     101111
-    `).whiteBased(),
+    `).whiteBased().withFumenId(5),
   "U":tileModel.fromString(`
   &
     
@@ -402,7 +411,7 @@ export const tileModels = Object.freeze({
     111111
     1 1111
     111111
-    `).whiteBased(),
+    `).whiteBased().withFumenId(5),
   "W":tileModel.fromString(`
   &
     
@@ -412,7 +421,7 @@ export const tileModels = Object.freeze({
     1 11 1
     1    1
     111111
-    `).whiteBased(),
+    `).whiteBased().withFumenId(5),
   "F":tileModel.fromString(`
   &
     
@@ -422,7 +431,7 @@ export const tileModels = Object.freeze({
     313333
     333333
     333333
-    `),
+    `).withFumenId(7),
   "K":tileModel.fromString(`
   &
     
@@ -432,7 +441,7 @@ export const tileModels = Object.freeze({
     212222
     222222
     222222
-    `),
+    `).withFumenId(4),
   "H":tileModel.fromString(`
   &
     
@@ -442,7 +451,7 @@ export const tileModels = Object.freeze({
     222222
     2 22 2
     222222
-    `),
+    `).withFumenId(2),
   "N":tileModel.fromString(`
   &
     
@@ -452,7 +461,7 @@ export const tileModels = Object.freeze({
     333333
     3 33 3
     333333
-    `),
+    `).withFumenId(6),
   "Y":tileModel.fromString(`
   &
     
@@ -462,7 +471,7 @@ export const tileModels = Object.freeze({
     22  12
     222112
     222222
-    `),
+    `).withFumenId(2),
   "R":tileModel.fromString(`
   &
     
@@ -472,7 +481,7 @@ export const tileModels = Object.freeze({
     33  13
     333113
     333333
-    `),
+    `).withFumenId(6),
   "P":tileModel.fromString(`
   &
     
@@ -482,7 +491,7 @@ export const tileModels = Object.freeze({
     133133
     333333
     333333
-    `),
+    `).withFumenId(7),
   "Q":tileModel.fromString(`
   &
     
@@ -492,7 +501,7 @@ export const tileModels = Object.freeze({
     122122
     222222
     222222
-    `),
+    `).withFumenId(4),
   "grenade":tileModel.fromString(`
   &
     
@@ -502,7 +511,7 @@ export const tileModels = Object.freeze({
     211112
     210012
     222222
-    `).doNotGrey(),
+    `).doNotGrey().withFumenId(1),
   "bomb":tileModel.fromString(`
   &
     
@@ -512,7 +521,7 @@ export const tileModels = Object.freeze({
     200002
     211002
     222222
-    `).doNotGrey(),
+    `).doNotGrey().withFumenId(3),
   "permanent":tileModel.fromString(`
   &
     
