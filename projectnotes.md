@@ -108,7 +108,6 @@ things to add
 - what if we had symbols for indicating line clears and b2b, similar to what other tennises did for drought
     - maybe we can use binary for numbers but that might be pushing it
     - toki pona
-        - kama for queue and awen for hold
 
 - play against bot
     - multiplayer peer to peer (scary)
@@ -119,3 +118,6 @@ things to add
 - chess
 
 - rigidbody physics
+
+- openworld
+    - rpg????

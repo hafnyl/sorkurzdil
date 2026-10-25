@@ -1,7 +1,8 @@
 the game is called sul|fir or sulfir or sulfur but in the code its called sorkurzdil
 
 known bugs
-- i think sometimes two garbage lines spawn that are
+- sound will keep playing if the tab is unfocused at the time the sound should stop playing
+- sometimes the dynamic text disappears for no reason
 
 ~~if a bug is easily encountered and recreatable i would probably have fixed it by now~~
 - lag happens every now and then and i dont know why
@@ -12,6 +13,6 @@ known bugs
 - i dont know how the weird garbage variants would interact with the systems i put in place for normal garbage, like counting of lines of garbage and dig and whatnot
 - why sometimes the renderer doesnt get a valid gamemanager object (and throws an error and the game is unplayable but refreshing fixes it)
 - sometimes lines hang around for one frame even though the line clear are is supposed to be zero
-- sometimes the dynamic text disappears prematurely and it might have something to do with focusing and unfocusing the window
+
 
 the font is a modified version of bytesized by baltdev, i added a bunch of minos starting from \uEA00

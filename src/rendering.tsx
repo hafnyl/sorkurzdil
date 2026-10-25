@@ -1,5 +1,5 @@
 import { palette, clearNames } from './roms.ts'
-import { colour3, formatTime, modular, vector2 } from './basics.ts'
+import { clone, colour3, formatTime, modular, vector2 } from './basics.ts'
 import MatrixRendering from './matrixrendering.tsx';
 import gameFlags, { lineclearalert } from './flags.ts';
 import { game, gameManager } from './sorkurzdil.ts';
@@ -9,6 +9,7 @@ import particleManager, { curve, rectParticle, textParticle } from './particlema
 import React, { createElement, ReactElement, RefObject, useImperativeHandle, useRef, useState } from 'react';
 import { piece } from './pieces.ts';
 import { colourpossibility, SafeColour, tileModel } from './tilemodels.ts';
+import ImageRenderer from './imagemanager.ts';
 
 function FDecay(x:number){
     return 1 - Math.exp(-x/32);
@@ -97,7 +98,7 @@ export class rendering {
             compensatezoom = 4 / length
         }
 
-        var compensateoffset = new vector2(0,Math.floor(Math.min(piece.boundingrectangle.south,2)-0.5)+1);
+        var compensateoffset = new vector2(0,Math.floor(Math.min(piece.extents.south,2)-0.5)+1);
         if(bounds.x%2==0)
             compensateoffset = compensateoffset.add(new vector2(-0.5,0))
 
@@ -302,26 +303,19 @@ export class rendering {
     setDynamicText;
 
     AlertText(text:string,colour:colour3|colourpossibility,lifespan:number,animation="",bold?:boolean){
-        /*const particle = new textParticle(text,colour)
-        //particle.velocity = new vector2((Math.random() - 0.5) * 60/100,(Math.random() - 0.5) * 60/100)
-        particle.scale = new curve(vector2.one.mul(60),vector2.one.mul(200))
-        //particle.angularvelocity = (Math.random() - 0.5) * Math.PI * 2 / 100
-        particle.opacity = new curve(1,0,(x:number)=>(1-(1-x)**16))
-        particle.lifespan = 3000
-        this.particleManager.particles.push(particle)*/
+        const id = Math.random().toString()
         let ee = createElement("div",
-            {style:{
+            {id:id,style:{
                 color:SafeColour(colour).toHex(),
                 opacity:0,
                 animation: lifespan.toString() + "s ease-out myAnimation" + animation,
                 fontWeight: bold ? "bold" : "normal",
             },className:"dynamic",onAnimationEnd:()=>{
-                this.setDynamicText(this.dynamicText.map(e=>{
-                    if(e === ee) return null; return e
-                }))
-                this.dynamicText = this.dynamicText.map(e=>{
-                    if(e === ee) return null; return e
-                }) as ReactElement[]
+                const a = this.dynamicText.map(e=>{
+                    if(e?.props?.id === id) return null; return e
+                })
+                this.setDynamicText(a)
+                this.dynamicText = a as ReactElement[]
             }
         },text);
         this.setDynamicText(this.dynamicText.concat(ee))

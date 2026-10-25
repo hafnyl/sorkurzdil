@@ -4,8 +4,8 @@ import { alignYType, difficultlinecleartype, gameConfig, garbagePacket, wavetype
 import { bagprefabs } from "./pieces.ts";
 import { kickSystems } from "./rotationsystems.ts";
 import { constraints, missions, scorers } from "./config.ts";
-import { LinesGenerator } from "./garbagegeneration.ts";
-import { Bombs, Damnation, NwideHolesLines } from "./garbagelinetypes.ts";
+import { DebrisGarbage, Decheese, LinesGenerator } from "./garbagegeneration.ts";
+import { Bombs, Damnation, NwideHolesLines, StraightsLines } from "./garbagelinetypes.ts";
 import { BasePieceGenerator, RandomPieceGenerator } from "./piecechoice.ts";
 import { MarkBombClears } from "./gimmicks.ts";
 
@@ -25,7 +25,7 @@ export default class configprefabs{
         _gameConfig.areincreaseresolution = 2*1000/60;
         _gameConfig.lineclearare = 20*1000/60
 
-        _gameConfig.pieceChoice = new RandomPieceGenerator(bagprefabs.tetrominos);
+        _gameConfig.pieceChoice = new RandomPieceGenerator(bagprefabs.arcade);
         _gameConfig.kickSystem = kickSystems.righthanded;
         _gameConfig.queuesize = 1;
         _gameConfig.holdsize = 0;
@@ -295,6 +295,22 @@ export default class configprefabs{
         _gameConfig.piecewaitsforgarbage = true
 
         _gameConfig.name = "damnation"
+        
+        return _gameConfig
+    }
+    
+    static get puyolike(){
+        let _gameConfig = new gameConfig()
+
+        _gameConfig.garbageChoice = new Decheese(new DebrisGarbage(new BasePieceGenerator(bagprefabs.tetrominos)),new LinesGenerator(new StraightsLines()), 1)
+        //_gameConfig.garbageChoice = new DebrisGarbage(new BasePieceGenerator(bagprefabs.tetrominos))
+        
+        _gameConfig.garbageare = 100
+        _gameConfig.piecewaitsforgarbage = true
+        
+        _gameConfig.backfire = 1
+        //_gameConfig.garbageripen = 8000
+        _gameConfig.name = "puyolike decheese backfire"
         
         return _gameConfig
     }

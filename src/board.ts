@@ -127,6 +127,9 @@ export class matrix{
         return new vector2(Number(zzz[0]),Number(zzz[1]))
     }
 
+    rows:{[key:string]:[number]}={};
+    columns:{[key:string]:[number]}={};
+
     Extents():uncenteredRectangle{
         const extents:uncenteredRectangle = {
             north:-1,
@@ -182,9 +185,12 @@ export class matrix{
         this.hashtable[key] = _tile
 
         this.effectiveUp = Math.max(this.effectiveUp,coords.y + 1);
+        this.effectiveRight = Math.max(this.effectiveRight,coords.x + 1);
+        this.effectiveDown = Math.min(this.effectiveDown,coords.y);
+        this.effectiveLeft = Math.min(this.effectiveLeft,coords.x);
 
         if(!updatesuppressed)
-            this.OnBoardUpdate()
+            this.OnBoardUpdate(false)
     }
 
     /**say updatesuppressed if youre going to delete many tiles and then call onboardupdate after*/
@@ -224,7 +230,7 @@ export class matrix{
         return a === undefined;
     }
 
-    /*can be moved into*/
+    /*can be moved into (doesnt check bounds)*/
     IsValid(coords:vector2) { // is this literally exactly the same as isunrenderable
         let a = this.GetTile(coords);
         if(a)
@@ -609,6 +615,11 @@ export class board{
                 if(coords.x >= this.matrix.useRight) return false;
                 return true
         }
+    }
+
+    /**matrix is valid and in board bounds */
+    IsValid(coords:vector2):boolean{
+        return this.InBounds(coords) && this.matrix.IsValid(coords)
     }
 
     InMatrix(coords:vector2):boolean{

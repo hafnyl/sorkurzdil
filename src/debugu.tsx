@@ -11,5 +11,5 @@ export default function TextDisplay({ref}){
 
     const [text, setText] = useState("blah")
 
-    return (<div className="corner">{text}</div>)
+    return (<div className="topleft">{text}</div>)
 }

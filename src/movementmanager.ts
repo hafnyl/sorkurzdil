@@ -8,6 +8,7 @@ import { levelsGravities, levelsLockTimes } from "./roms.ts";
 import { SpinType, symmetry } from "./rotationsystems.ts";
 import { game } from "./sorkurzdil.ts";
 import gameFlags from "./flags.ts";
+import sfxs, { sfx, playback } from './sfxmanager.ts'
 
 export type lockReport={
     spin:boolean,
@@ -93,7 +94,9 @@ export default class MovementManager{
                     var drop = this.SonicDrop(true);
                     if(this.game.gameConfig.simplescoring === simpleScoringSystems.guideline)
                         this.game.score += drop * 2;
-                    this.Lock();
+                    if(drop >= 2)
+                        sfxs.PlayPBobject(sfxs.GetSFX(sfx.kick1).withspeed(4))
+                    this.Lock(false,true);
                     break;
                 case Command.RotNull:
                     if(!this.game.gameConfig.allowRotation)break;
@@ -572,18 +575,18 @@ export default class MovementManager{
         //im just making stuff up at this point (tspins work the same way as before but i have to extend it to work for other stuff as well)
         var greatchecks = 0;
         for(const offset of [vector2.up,vector2.left,vector2.right,new vector2(1,1),new vector2(-1,1)]){
-            if(!this.board.matrix.IsValid(position.add(offset.orient(relativeright,relativeup)))) 
+            if(!this.board.IsValid(position.add(offset.orient(relativeright,relativeup)))) 
                 greatchecks++;
         }
         
         var minichecks = 0;
         for(const offset of [vector2.down,new vector2(1,-1),new vector2(-1,-1)])
-            if(!this.board.matrix.IsValid(position.add(offset.orient(relativeright,relativeup)))) 
+            if(!this.board.IsValid(position.add(offset.orient(relativeright,relativeup)))) 
                 minichecks++;
         
         var lodgechecks = 0; //only for i
         for(const offset of [vector2.up,vector2.down,new vector2(1,1),new vector2(1,-1)])
-            if(!this.board.matrix.IsValid(position.add(offset.orient(relativeright,relativeup)))) 
+            if(!this.board.IsValid(position.add(offset.orient(relativeright,relativeup))))
                 lodgechecks++;
 
         
@@ -696,13 +699,19 @@ export default class MovementManager{
         }
     }
 
-    Lock(earlylock=false){
+    Lock(earlylock=false,harddrop=false){
         if(!this.board.activepiece)
             return
         if(!this.board.PieceNoncolliding(vector2.zero,this.board.activepiece,this.board.activeposition) || !this.board.PieceInBounds(vector2.zero,this.board.activepiece,this.board.activeposition))
             return
         if(this.game.gameConfig.verticallineclears && !this.board.PieceStrictlyInBounds(vector2.zero,this.board.activepiece,this.board.activeposition))
             return
+
+        if(earlylock)
+            sfxs.PlayPBobject(sfxs.GetSFX(sfx.noise2).withspeed(4))
+        else
+            sfxs.PlayPBobject(sfxs.GetSFX(sfx.kick2).withspeed(8))
+
 
         var [spin, mini, immobile] = this.SpinDetection()
         if (!this.spineligible)

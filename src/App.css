@@ -14,11 +14,18 @@
   color: #ffffff;
 }
 
-.corner{
+.topleft{
   position: fixed;
   top: 0%;
   left: 0%;
   transform: translate(0%, 0%);
+}
+
+.middleleft{
+  position: fixed;
+  top: 50%;
+  left: 0%;
+  transform: translate(0%, -50%);
 }
 
 
@@ -114,6 +121,19 @@ canvas {
   transform: translate(-50%, -50%);
 }
 
+.canvaslike {
+  margin: 0;
+  position:relative;
+  max-height: 100%;
+  max-width: 100%;
+  width: auto;
+  aspect-ratio: 16/9;
+  display: block;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
 .dynamic {
   -webkit-touch-callout: none;
   -webkit-user-select: none;
@@ -121,4 +141,10 @@ canvas {
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+}
+
+button{
+  font-family: 'Bytesized';
+  background-color: #000000;
+  font-size: large;
 }

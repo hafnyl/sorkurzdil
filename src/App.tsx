@@ -11,12 +11,13 @@ import configs from './configprefabs.ts'
 import { kickSystems } from './rotationsystems.ts';
 import TextDisplay from './debugu.tsx'
 import { boundstype, tile } from './board.ts';
-import { BaseGarbageGenerator, DebrisGarbage, Decheese, LinesGenerator as LinesGarbage, SpecklesGarbage, WidthGarbage } from './garbagegeneration.ts';
+import { BaseGarbageGenerator, DebrisGarbage, Decheese, LinesGenerator, SpecklesGarbage, WidthGarbage } from './garbagegeneration.ts';
 import { AdhereToGlue } from './gimmicks.ts';
 import { BaseLineGenerator, Damnation, MessyLines, NwideHolesLines, OneBlockLine, StraightsLines } from './garbagelinetypes.ts';
 import { BasePieceGenerator, Fool } from './piecechoice.ts';
 import { tileModels } from './tilemodels.ts';
 import sfxs, { sfx, playback } from './sfxmanager.ts'
+import ImageRenderer, { images } from './imagemanager.ts';
 
 const FPS = 120;
 
@@ -53,21 +54,14 @@ _gameConfig.debug = true;
 //  new garbagePacket(4),
 //]
 
-_gameConfig.garbageChoice = new Decheese(new DebrisGarbage(new BasePieceGenerator(bagprefabs.tetrominos)),new LinesGarbage(new StraightsLines()), 1)
-//_gameConfig.garbageChoice = new DebrisGarbage(new BasePieceGenerator(bagprefabs.tetrominos))
-
-_gameConfig.garbageare = 100
-_gameConfig.piecewaitsforgarbage = true
-
-_gameConfig.backfire = 1
-//_gameConfig.garbageripen = 8000
-_gameConfig.name = "void pvp backfire"
+//_gameConfig.pieceChoice = new BasePieceGenerator(bagprefabs.tetrominosminusI)
+//_gameConfig.name = "你I没了"
 
 //_gameConfig.Splice(configs.allpc28)
 
 //_gameConfig.Splice(configs.m123)
 
-//_gameConfig.width = 3
+_gameConfig.width = 4
 //_gameConfig.height = 6
 
 _userConfig.boardGreying = false
@@ -84,6 +78,7 @@ const A = {
   "KeyK":Command.ShiftLeft,
   "Semicolon":Command.ShiftRight,
   "KeyO":Command.RotCW,
+  "KeyD":Command.RotCW,
   "KeyL":Command.SoftDrop,
   "Period":Command.ShiftDown,
   "Space":Command.HardDrop,
@@ -95,7 +90,7 @@ const A = {
   "Digit3":Command.RotNull,
   "KeyE":Command.HoriFlip,
   "KeyQ":Command.VertFlip,
-  "KeyD":Command.Discard,
+  "KeyF":Command.Discard,
   "KeyP":Command.ShiftUp,
   "Digit4":Command.SpawnGarbage,
   "Digit5":Command.SpawnGarbage4,
@@ -144,7 +139,7 @@ var inputManager = new InputManager(_userConfig);
 
 var starttime:number;
 var latetime = Date.now()
-function Update(canvas:HTMLCanvasElement,timestamp:number,deltaTime:number){
+function UpdateMenu(canvas:HTMLCanvasElement,timestamp:number,deltaTime:number){
 
   const ctx = canvas.getContext('2d')
   if(!ctx)
@@ -155,13 +150,15 @@ function Update(canvas:HTMLCanvasElement,timestamp:number,deltaTime:number){
   ctx.textAlign = "start"; 
   ctx.font = "bold 128px Bytesized";
   ctx.letterSpacing = Math.sin((timestamp - starttime)/3000)**4 * 128 + "px"
-  ctx.fillText("Sul|fir ",canvas.width/2-1600,canvas.height/2-600);
+  ctx.fillText("Sul|fir ",400,canvas.height/2-600);
+
+  ImageRenderer.DrawImage(ctx,images.sulfir,new vector2(canvas.width/2+400,canvas.height/2-500),new vector2(1000,1000))
 }
 
 function OnStart(){
   starttime = Date.now();
-  //sfxs.PlayPBobject(sfxs.GetPitch(2,0).withspeed(0.2))
-  sfxs.PlayPBobject(sfxs.GetSFX(sfx.noise0).withspeed(1))
+  sfxs.PlayPBobject(sfxs.GetPitch(2,0).withspeed(0.2))
+  //sfxs.PlayPBobject(sfxs.GetSFX(sfx.noise0).withspeed(1))
 }
 
 var currgameconfig = new gameConfig();
@@ -209,7 +206,7 @@ function App() {
 
       const menuCanvas = menuCanvasRef.current;
       if(menuCanvas)
-        Update(menuCanvas,timestamp,deltaTime);
+        UpdateMenu(menuCanvas,timestamp,deltaTime);
       
       if(gameRef.current){
         if(!gameRef.current.isInitialised()){
@@ -277,22 +274,24 @@ function App() {
     return (
       <div className="App">
         <TextDisplay ref={debugu}/>
-        <button style={{transform: "translate(-30vw, -50%) translate(0,-10vh)"}} onClick={()=>{
-          StartGame(debugu,configs.master);
-        }}>play normal</button>
-        <button style={{transform: "translate(-30vw, -50%)"}} onClick={()=>{
-          StartGame(debugu,configs.sprint40);
-        }}>play 40l</button>
-        <button style={{transform: "translate(-30vw, -50%) translate(0,10vh)"}} onClick={()=>{
-          StartGame(debugu,configs.warlock);
-        }}>play warlock</button>
-        <button style={{transform: "translate(-30vw, -50%) translate(0,20vh)"}} onClick={()=>{
-          StartGame(debugu,configs.big);
-        }}>play big</button>
-        <button style={{transform: "translate(-30vw, -50%) translate(0,30vh)"}} onClick={()=>{
-          setScene(scenes.menu)
-          sfxs.PlayPBobject(sfxs.GetPitch(0,0).withspeed(0.2));
-        }}>back</button>
+        <div className='canvaslike'>
+          <button className='middleleft' style={{top:"30%",left:"10%",transform: "translate(0, -50%)"}} onClick={()=>{
+            StartGame(debugu,configs.master);
+          }}>play normal</button>
+          <button className='middleleft' style={{top:"40%",left:"10%",transform: "translate(0, -50%)"}} onClick={()=>{
+            StartGame(debugu,configs.sprint40);
+          }}>play 40l</button>
+          <button className='middleleft' style={{top:"50%",left:"10%",transform: "translate(0, -50%)"}} onClick={()=>{
+            StartGame(debugu,configs.warlock);
+          }}>play warlock</button>
+          <button className='middleleft' style={{top:"60%",left:"10%",transform: "translate(0, -50%)"}} onClick={()=>{
+            StartGame(debugu,configs.big);
+          }}>play big</button>
+          <button className='middleleft' style={{top:"70%",left:"10%",transform: "translate(0, -50%)"}} onClick={()=>{
+            setScene(scenes.menu)
+            sfxs.PlayPBobject(sfxs.GetPitch(0,0).withspeed(0.2));
+          }}>back</button>
+        </div>
       </div>
     );
   }
@@ -302,16 +301,18 @@ function App() {
       <div className="App">
         <TextDisplay ref={debugu}/>
         <canvas ref={menuCanvasRef} width="4550px" height="2560px"/>
-        <button style={{transform: "translate(-30vw, -50%) translate(0,-10vh)"}} onClick={()=>{
-          setScene(scenes.levelselect)
-          sfxs.PlayPBobject(sfxs.GetPitch(2,1).withspeed(0.2));
-        }}>level select</button>
-        <button style={{transform: "translate(-30vw, -50%)"}} onClick={()=>{
-          StartGame(debugu,currgameconfig);
-        }}>play last: {currgameconfig.name}</button>
-        <button style={{transform: "translate(-30vw, -50%) translate(0,10vh)"}} onClick={()=>{
-          StartGame(debugu,_gameConfig);
-        }}>play special: {_gameConfig.name}</button>
+        <div className='canvaslike'>
+          <button className='middleleft' style={{top:"60%",left:"10%",transform: "translate(0, -50%)"}} onClick={()=>{
+            setScene(scenes.levelselect)
+            sfxs.PlayPBobject(sfxs.GetPitch(2,1).withspeed(0.2));
+          }}>level select</button>
+          <button className='middleleft' style={{top:"50%",left:"10%",transform: "translate(0, -50%)"}} onClick={()=>{
+            StartGame(debugu,currgameconfig);
+          }}>play last: {currgameconfig.name}</button>
+          <button className='middleleft' style={{top:"40%",left:"10%",transform: "translate(0, -50%)"}} onClick={()=>{
+            StartGame(debugu,_gameConfig);
+          }}>play special: {_gameConfig.name}</button>
+        </div>
       </div>
     );
   }

@@ -728,6 +728,14 @@ export const bagprefabs = Object.freeze({
     pieces.J,
     pieces.S,
   ],
+  tetrominosminusI: [
+    pieces.L,
+    pieces.O,
+    pieces.Z,
+    pieces.T,
+    pieces.J,
+    pieces.S,
+  ],
   arcade: [
     pieces.I.withKickType(kickType.I).withSymmetry(symmetry.rot180),
     pieces.L.rotated(2).withRotationCleared(),

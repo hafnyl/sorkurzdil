@@ -270,6 +270,39 @@ export class gameManager{
     lastCleared = "";
     lastClearedWarlock = "";
 
+    DifficultLineClear(_difficultlinecleartype:difficultlinecleartype,piecejustplaced:piece,lines:number,spin:boolean,mini:boolean,immobile:boolean,pc:boolean):true|false|null{
+        switch(_difficultlinecleartype){
+            case difficultlinecleartype.lenientallspin:
+                if(lines >= 4 || spin || mini || immobile || pc)
+                    return true
+                else if(lines >= 1)
+                    return false
+                return null
+            case difficultlinecleartype.allspin:
+                if(lines >= 4 || ((spin || mini || immobile) && lines >= 1) || pc)
+                    return true
+                else if(lines >= 1)
+                    return false
+                return null
+            case difficultlinecleartype.tspin:
+                if(lines >= 4 || ((spin || mini) && piecejustplaced.name === "T" && lines >= 1) || pc)
+                    return true
+                else if(lines >= 1)
+                    return false
+                return null
+            case difficultlinecleartype.tech:
+                if(((spin || mini) && lines >= 1) || pc)
+                    return true
+                else if(lines >= 1)
+                    return false
+                return null
+            default:
+                if(lines >= 1)
+                    return false
+                return null
+        }
+    }
+
     /**affects combo ib2b meter */
     ComboAdjacent(piecejustplaced:piece,lines:number,spin:boolean,mini:boolean,immobile:boolean,updatelastcleareds=false):[game,boolean,boolean,boolean,boolean,boolean]{
         var pc = this.board.matrix.VirtualPC();
@@ -277,46 +310,21 @@ export class gameManager{
 
         var _game = clone(this.game)
         
+            console.log(_game.combo)
         if(lines <= 0){
             _game.combo = -1;
             combobreak = true;
         }
-        else
+        else{
             _game.combo++;
+        }
         
-        switch(_game.gameConfig.difficultlinecleartype){
-            case difficultlinecleartype.lenientallspin:
-                if(lines >= 4 || spin || mini || immobile || pc)
-                    _game.ib2b++;
-                else if(lines >= 1){
-                    _game.ib2b = -1;
-                    b2bbreak = true;
-                }
-                break
-            case difficultlinecleartype.allspin:
-                if(lines >= 4 || ((spin || mini || immobile) && lines >= 1) || pc)
-                    _game.ib2b++;
-                else if(lines >= 1){
-                    _game.ib2b = -1;
-                    b2bbreak = true;
-                }
-                break
-            case difficultlinecleartype.tspin:
-                if(lines >= 4 || ((spin || mini) && piecejustplaced.name === "T" && lines >= 1) || pc)
-                    _game.ib2b++;
-                else if(lines >= 1){
-                    _game.ib2b = -1;
-                    b2bbreak = true;
-                }
-                break
-            case difficultlinecleartype.tech:
-                if(((spin || mini) && lines >= 1) || pc)
-                    _game.ib2b++;
-                else if(lines >= 1){
-                    _game.ib2b = -1;
-                    b2bbreak = true;
-                }
-                break
+        const difficultlineclearstatus = this.DifficultLineClear(_game.gameConfig.difficultlinecleartype,piecejustplaced,lines,spin,mini,immobile,pc)
+        if(difficultlineclearstatus === true)
+            _game.ib2b++;
+        if(difficultlineclearstatus === false){
+            _game.ib2b = -1;
+            b2bbreak = true;
         }
 
         var magicianbreak = false;
@@ -583,6 +591,8 @@ export class gameManager{
         if (this.game.gameConfig.levelling === levelling.nes){
             this.game.levels = Math.max(Math.floor(this.game.lines / 10),this.game.gameConfig.startlevel);
         }
+        var pc = false
+        var pcvariant = false
         if(this.board.matrix.PerfectClear()){
             if(this.game.lines < 4)
                 this.game.flags.tpc = true;
@@ -596,6 +606,8 @@ export class gameManager{
                 code:"pc",
             })
             this.game.pc++;
+            pc = true
+            sfxs.PlayPitch(4,3)
         }else if(this.board.matrix.VirtualPC() && !this.vpcdebounce){
             this.vpcdebounce = true
             this.game.flags.vpc = true
@@ -609,9 +621,68 @@ export class gameManager{
             })
             if(this.game.gameConfig.vpcclearsall)
                 this.board.matrix.ClearPerfect()
+            pcvariant = true
         }
         if(!this.board.matrix.VirtualPC())
             this.vpcdebounce = false
+
+        if(!pc && pcvariant)
+            sfxs.PlayPitch(4,0)
+
+        const [oldcombo,oldb2b] = [this.game.combo,this.game.ib2b] // a bunch of combo and b2b handling stuff
+        const [_game,combobreak,b2bbreak,magicianbreak,warlockbreak,healthdeath] = this.ComboAdjacent(piecejustplaced,lines,lr.spin,lr.mini,lr.immobile,true)
+        this.ComboWhatever(combobreak,b2bbreak,magicianbreak,warlockbreak,healthdeath,oldb2b,oldcombo,lines);
+        
+        if(combobreak)
+            this.game.combo = _game.combo
+        if(b2bbreak){
+            this.game.ib2b = _game.ib2b; this.game.meter = _game.meter
+        }
+
+        //in between combo,,, i kind of have to do this because attack doesnt want b2b to be calculated yet but for combo it does
+        const attack = this.CalculateAttack(piecejustplaced,lines,lr.spin,lr.mini,lr.immobile)
+        this.CalculateScore(piecejustplaced,lines,lr.spin,lr.mini,lr.immobile); // score and attack obviously
+        this.Backfire(attack)
+
+        //sound should follow the attack
+        if(lr.spin || lr.immobile || lr.mini){
+            sfxs.PlayPBobject(sfxs.GetPitch(5,Math.min(3,lines) as (0|1|2|3)).withspeed(1 / (2 ** this.game.backto)));
+        }else{
+            if(lines >= 4)
+                sfxs.PlayPBobject(sfxs.GetSFX(sfx.gunshot1).withspeed(4 / (2 ** (lines - 4))).withvolume(1).withspeed(1 / (1.1 ** this.game.backto)));
+            else if(lines > 0)
+                sfxs.PlayPBobject(sfxs.GetSFX(sfx.gunshot0).withspeed(8));
+        }
+        const difficultlineclearstatus = this.DifficultLineClear(_game.gameConfig.difficultlinecleartype,piecejustplaced,lines,lr.spin,lr.mini,lr.immobile,pc)
+
+        if(oldb2b > 0 && b2bbreak)
+            sfxs.PlayPBobject(sfxs.GetSFX(sfx.tone).withspeed(8).withvolume(1 - 1 /oldb2b));
+        if(oldcombo > 3 && combobreak)
+            sfxs.PlayPBobject(sfxs.GetSFX(sfx.die).withspeed(2 * Math.min(1,10/(this.game.combo+1))).withvolume(1 - 1 /(oldcombo - 1)));
+
+        //resume combo handling
+        this.game.combo = _game.combo; this.game.ib2b = _game.ib2b; this.game.meter = _game.meter
+
+        if(this.game.combo >= 0){
+            const speedmod = Math.min(1,10/(this.game.combo+1))
+            for (let i = 0; i < 4; i++) {
+                if((this.game.combo & (2**i)) == 0) continue
+                if(difficultlineclearstatus == true)
+                    sfxs.PlayPBobject(sfxs.GetPitch(1,i as (0|1|2|3)).withspeed(speedmod))
+                else
+                    sfxs.PlayPBobject(sfxs.GetPitch(0,i as (0|1|2|3)).withspeed(speedmod))
+            }
+            if(this.game.combo >= (2**4))
+                if(difficultlineclearstatus == true)
+                    sfxs.PlayPBobject(sfxs.GetPitch(3,0).withspeed(speedmod))
+                else
+                    sfxs.PlayPBobject(sfxs.GetPitch(3,3).withspeed(speedmod))
+            if(this.game.combo >= 20)
+                if(difficultlineclearstatus == true)
+                    sfxs.PlayPBobject(sfxs.GetPitch(4,0).withspeed(speedmod))
+                else
+                    sfxs.PlayPBobject(sfxs.GetPitch(4,3).withspeed(speedmod))
+        }
 
         this.game.flags.lineclearalerts.push({ //tell renderer we linecleared so they can draw the thing
             time:Date.now(),
@@ -624,22 +695,6 @@ export class gameManager{
             morph:lr.morph,
             combo:this.game.combo,
         })
-
-        const [oldcombo,oldb2b] = [this.game.combo,this.game.ib2b] // a bunch of combo and b2b handling stuff
-        const [_game,combobreak,b2bbreak,magicianbreak,warlockbreak,healthdeath] = this.ComboAdjacent(piecejustplaced,lines,lr.spin,lr.mini,lr.immobile,true)
-        this.ComboWhatever(combobreak,b2bbreak,magicianbreak,warlockbreak,healthdeath,oldb2b,oldcombo,lines);
-        
-        if(combobreak)
-            this.game.combo = _game.combo // i kind of have to do this because attack doesnt want b2b to be calculated yet but combo does
-        if(b2bbreak){
-            this.game.ib2b = _game.ib2b; this.game.meter = _game.meter
-        }
-
-        const attack = this.CalculateAttack(piecejustplaced,lines,lr.spin,lr.mini,lr.immobile)
-        this.CalculateScore(piecejustplaced,lines,lr.spin,lr.mini,lr.immobile); // score and attack obviously
-        this.Backfire(attack)
-
-        this.game.combo = _game.combo; this.game.ib2b = _game.ib2b; this.game.meter = _game.meter
 
         if(lines <= 0 || !this.game.gameConfig.comboBlocking) // garbage related stuff
             this.GarbageEnter()
@@ -660,6 +715,8 @@ export class gameManager{
         this.StepAre(0);
         
         this.EvaluateMission();
+
+
     }
 
     PlacementCouldKill(shift=vector2.zero){
