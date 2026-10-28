@@ -9,7 +9,7 @@ export default function TextDisplay({ref}){
         }
     })
 
-    const [text, setText] = useState("blah")
+    const [text, setText] = useState("")
 
     return (<div className="topleft">{text}</div>)
 }

@@ -38,6 +38,7 @@ export class piece{
   chirality=vector2.one;
   symmetry=symmetry.none;
   lodgeability=false;
+  strideful=true;
 
   get kickType(){
     if(this.ikickType && this.ikickType != kickType.auto)
@@ -262,6 +263,12 @@ export class piece{
     robot.lodgeability = true;
     return robot;
   }
+
+  unstrideful(){
+    let robot = clone(this);
+    robot.strideful = false;
+    return robot;
+  }
 }
 
 export const pieces = Object.freeze({
@@ -312,7 +319,7 @@ export const pieces = Object.freeze({
   tileModels.Z,
   kickType.Z,
   "",
-  SpinType.S),
+  SpinType.S).unstrideful(),
 
   T:
   new piece("t4",[
@@ -348,7 +355,7 @@ export const pieces = Object.freeze({
   tileModels.S,
   kickType.S,
   "",
-  SpinType.S),
+  SpinType.S).unstrideful(),
   
   //modified tetrominoes
   sz:
@@ -370,7 +377,7 @@ export const pieces = Object.freeze({
     `),
   kickType.T,
   "s",
-  SpinType.S),
+  SpinType.S).unstrideful(),
   jl:
   new piece("l4f",[
     new vector2(-1,0),
@@ -414,12 +421,12 @@ export const pieces = Object.freeze({
     #
     ##
      ##
-    `,tileModels.W,"",kickType.W),
+    `,tileModels.W,"",kickType.W).unstrideful(),
   X:piece.fromString("x5",`
      #
     ###
      #
-    `,tileModels.T,"",kickType.X).lodgeable(),
+    `,tileModels.T,"",kickType.X).lodgeable().unstrideful(),
   J5:piece.fromString("j5",`
     #
     ####
@@ -431,11 +438,11 @@ export const pieces = Object.freeze({
   H:piece.fromString("h5",`
       ##
     ###
-    `,tileModels.H,"",kickType.H),
+    `,tileModels.H,"",kickType.H).unstrideful(),
   N:piece.fromString("n5",`
     ##
      ###
-    `,tileModels.N,"",kickType.N),
+    `,tileModels.N,"",kickType.N).unstrideful(),
   Y:piece.fromString("y5",`
       #
     ####
@@ -456,22 +463,22 @@ export const pieces = Object.freeze({
     3
     333
      3
-    `,tileModels.F,"",kickType.F),
+    `,tileModels.F,"",kickType.F).unstrideful(),
   K:piece.fromString("k5",`
       3
     333
      3
-    `,tileModels.K,"",kickType.K),
+    `,tileModels.K,"",kickType.K).unstrideful(),
   Z5:piece.fromString("z5",`
     33
      3
      33
-    `,tileModels.Z,"",kickType.Z5),
+    `,tileModels.Z,"",kickType.Z5).unstrideful(),
   S5:piece.fromString("s5",`
      33
      3
     33
-    `,tileModels.S,"",kickType.S5),
+    `,tileModels.S,"",kickType.S5).unstrideful(),
   
   //123 minos
   C:

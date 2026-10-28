@@ -113,10 +113,8 @@ export class gameManager{
         
         this.inputManager = inputManager||new InputManager(_userConfig);
 
-        const _matrix = new matrix(_gameConfig);
-        const piecespawnlocation = new vector2(Math.ceil(_gameConfig.width/2) - 1,_gameConfig.height).add(_gameConfig.spawnOffset);
-        this.board = new board(_matrix,piecespawnlocation)
-        this.board.boundstype = _gameConfig.boundstype
+        const _matrix = new matrix(_gameConfig.matrixConfig);
+        this.board = new board(_matrix,_gameConfig.boardConfig)
 
         this.game = new game(_gameConfig,_userConfig,this.inputManager,this.board);
         if(_gameConfig.twoplayer)
@@ -124,7 +122,8 @@ export class gameManager{
 
         this.pieceChoice = clone(_gameConfig.pieceChoice);
         this.pieceChoice.Seed(seed)
-        this.pieceChoice.Cull(_gameConfig.width)
+        this.pieceChoice.startstride = _gameConfig.stridefulfirstpiece
+        this.pieceChoice.Cull(_gameConfig.matrixConfig.width)
 
         this.movementManager = new MovementManager(this.game,this.board);
 
@@ -554,7 +553,7 @@ export class gameManager{
         this.game.pieces++;
         this.areelapsed = 0;
         if(pieceless){
-            this.areelapsed -= this.game.gameConfig.voidare
+            this.areelapsed -= this.game.gameConfig.boardConfig.voidare
         }
     }
 
@@ -578,7 +577,7 @@ export class gameManager{
 
         var [lines, dig] = this.board.matrix.MarkClears(); //line clears
         lines += lr.gimmickReport.lines;
-        if(this.game.gameConfig.verticallineclears)
+        if(this.game.gameConfig.matrixConfig.verticallineclears)
             lines += this.board.matrix.MarkClearsVert();
         if(lines > 0){
             this.lineclearare = true;
@@ -619,7 +618,7 @@ export class gameManager{
                     colour:new colour3(1,0,1)
                 },
             })
-            if(this.game.gameConfig.vpcclearsall)
+            if(this.game.gameConfig.boardConfig.vpcclearsall)
                 this.board.matrix.ClearPerfect()
             pcvariant = true
         }
@@ -831,7 +830,7 @@ export class gameManager{
 
     ClearLineAndShiftActive(){
         var lines:number[] = [];
-        if(this.game.gameConfig.verticallineclears){
+        if(this.game.gameConfig.matrixConfig.verticallineclears){
             this.board.matrix.ClearLinesIncludeVert(this.game.gameConfig.lineclearare + this.game.gameConfig.linecleartime)
         }else
             lines = this.board.matrix.ClearLines(this.game.gameConfig.lineclearare + this.game.gameConfig.linecleartime,!this.game.gameConfig.lineclearshiftdown);

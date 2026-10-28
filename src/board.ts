@@ -1,7 +1,7 @@
 import { colour3, vector2 } from './basics.ts'
 import { tileModels, tileModel } from './tilemodels.ts';
 import { piece, uncenteredRectangle } from './pieces.ts';
-import { gameConfig } from './config.ts';
+import { boardConfig, gameConfig, matrixConfig } from './config.ts';
 
 export enum tileType{
     none,
@@ -75,45 +75,45 @@ export class matrix{
 
     onUpdate:(()=>void)[]=[];
 
-    gameConfig:gameConfig;
+    matrixConfig:matrixConfig;
     
     get useUp():number{
-        if(this.gameConfig.extendheight < 0)
+        if(this.matrixConfig.extendheight < 0)
             return this.effectiveUp
         else
-            return Math.min(this.effectiveUp,this.height + this.gameConfig.extendheight)
+            return Math.min(this.effectiveUp,this.height + this.matrixConfig.extendheight)
     }
 
     get useLeft():number{
-        if(this.gameConfig.extendclearxrequirement)
+        if(this.matrixConfig.extendclearxrequirement)
             return Math.min(0,this.effectiveLeft)
         else
             return 0
     }
 
     get useRight():number{
-        if(this.gameConfig.extendclearxrequirement)
+        if(this.matrixConfig.extendclearxrequirement)
             return Math.max(this.width,this.effectiveRight)
         else
             return this.width
     }
 
     get lowvanishingpoint():number{
-        if(this.gameConfig.dynamicvanishingpoint)
-            return this.effectiveDown - this.gameConfig.lowvanishingpoint
+        if(this.matrixConfig.dynamicvanishingpoint)
+            return this.effectiveDown - this.matrixConfig.lowvanishingpoint
         else
-            return -this.gameConfig.lowvanishingpoint
+            return -this.matrixConfig.lowvanishingpoint
     }
 
-    constructor(_gameConfig:gameConfig)
+    constructor(_matrixConfig:matrixConfig)
     {
-        this.width = _gameConfig.width;
-        this.height = _gameConfig.height;
+        this.width = _matrixConfig.width;
+        this.height = _matrixConfig.height;
         this.effectiveUp = 0;
         this.effectiveDown = 0;
         this.effectiveLeft = 0;
-        this.effectiveRight = _gameConfig.width;
-        this.gameConfig = _gameConfig
+        this.effectiveRight = _matrixConfig.width;
+        this.matrixConfig = _matrixConfig
     }
 
     //basic function
@@ -230,8 +230,8 @@ export class matrix{
         return a === undefined;
     }
 
-    /*can be moved into (doesnt check bounds)*/
-    IsValid(coords:vector2) { // is this literally exactly the same as isunrenderable
+    /*can be moved into in normal tetris*/
+    private iIsValid(coords:vector2) { // is this literally exactly the same as isunrenderable
         let a = this.GetTile(coords);
         if(a)
         {
@@ -241,6 +241,11 @@ export class matrix{
         }
         else
             return true;
+    }
+
+    /*can be moved into (doesnt check bounds)*/
+    IsValid(coords:vector2) {
+        return this.iIsValid(coords)
     }
 
     /**get all the positions of the tiles that can be rendered*/
@@ -320,13 +325,52 @@ export class matrix{
         return empties
     }
 
-    ClearEligible(i:vector2){ // too lazy to fit this into the currect clear mechanism right now but it would look cleaner i think
+    private iClearEligible(i:vector2){
         let _tile = this.GetTile(i);
-        if(!_tile) return false; //this only works because if one tile isnt here we dont have to check that the rest is complete!!!
+        if(_tile === undefined) return false;
         if(!_tile.countstoclear) return false;
         const death = _tile.death;
         if(death !== undefined) return false;
         return true
+    }
+
+    /*
+    const _tile = this.GetTile(new vector2(0,y));
+    if(!_tile) continue; //this only works because if one tile isnt here we dont have to check that the rest is complete!!!
+    if(!_tile.countstoclear) continue;
+    const death = _tile.death;
+    if(death !== undefined) continue;
+    let completerow = true;
+
+    let isdig = false;
+
+    for(let x=this.useLeft; x<this.useRight; x++){
+        let i = new vector2(x,y);
+        let thile = this.GetTile(i);
+        if(this.IsUnrenderable(i) || !thile || !thile.countstoclear){
+            completerow =false;
+            break;
+        }
+        if(thile.isGarbage)
+            isdig = true
+    }
+
+    if (!completerow) continue;
+    lineclears++;
+    for(const [k,i] of Object.entries(this.hashtable))
+        if(this.Unhash(k).y == y)
+            i.death = new Date().getTime();
+    this.toclear.push({
+        row:y,
+        death:Date.now(),
+    })
+
+    if(isdig)
+        diglineclears++
+    */
+
+    ClearEligible(i:vector2){ // this is for spacious tetris
+        return this.iClearEligible(i)
     }
 
     PieceLineClears(_piece:piece,position:vector2){
@@ -465,19 +509,14 @@ export class matrix{
         let lineclears = 0;
         let diglineclears = 0;
         for(let y=this.effectiveDown; y<this.effectiveUp; y++){
-            const _tile = this.GetTile(new vector2(0,y));
-            if(!_tile) continue; //this only works because if one tile isnt here we dont have to check that the rest is complete!!!
-            if(!_tile.countstoclear) continue;
             let completerow = true;
-            const death = _tile.death;
-            if(death !== undefined) continue;
 
             let isdig = false;
 
             for(let x=this.useLeft; x<this.useRight; x++){
                 let i = new vector2(x,y);
                 let thile = this.GetTile(i);
-                if(this.IsUnrenderable(i) || !thile || !thile.countstoclear){
+                if(thile===undefined || !this.ClearEligible(i)){
                     completerow =false;
                     break;
                 }
@@ -575,15 +614,22 @@ export class board{
 
     boundstype=boundstype.dynamic
 
-    constructor(_matrix:matrix,piecespawnlocation:vector2){
+    boardConfig:boardConfig
+
+    constructor(_matrix:matrix,_boardConfig:boardConfig){
         this.matrix = _matrix;
+        const piecespawnlocation = new vector2(Math.ceil(this.matrix.width/2) - 1,this.matrix.height).add(_boardConfig.spawnOffset);
         this.spawnlocation = piecespawnlocation
         this.activeposition = piecespawnlocation;
+        this.boardConfig = _boardConfig
+
+
+        this.boundstype = _boardConfig.boundstype
     }
 
     InBounds(coords:vector2,_boundstype:boundstype=this.boundstype):boolean{
-        if(this.matrix.gameConfig.extendheight >= 0)
-            if(coords.y >= this.matrix.height + this.matrix.gameConfig.extendheight)
+        if(this.matrix.matrixConfig.extendheight >= 0)
+            if(coords.y >= this.matrix.height + this.matrix.matrixConfig.extendheight)
                 return false
         switch(_boundstype){
             case boundstype.boundless:
@@ -665,7 +711,7 @@ export class board{
 
     /**switches between valid placement and in bounds based on active piece phasing*/
     ValidShift(shift:vector2,_piece:piece,position:vector2,_boundstype:boundstype=this.boundstype){
-        if(this.matrix.gameConfig.activepiecephasethroughblocks)
+        if(this.boardConfig.activepiecephasethroughblocks)
             return this.PieceInBounds(shift,_piece,position,_boundstype);
         else
             return this.PieceNoncolliding(shift,_piece,position,_boundstype);
@@ -684,7 +730,7 @@ export class board{
         let exhaust = 0
 
         var usebounds = this.boundstype
-        if((this.boundstype !== boundstype.strict) && this.matrix.gameConfig.boundlessdropsusefloorbounded && this.PieceInBounds(vector2.zero,_piece,position,boundstype.strict))
+        if((this.boundstype !== boundstype.strict) && this.boardConfig.boundlessdropsusefloorbounded && this.PieceInBounds(vector2.zero,_piece,position,boundstype.strict))
             usebounds = boundstype.strict;
 
         while(this.PieceNoncolliding(dropHeight.add(dropdirection),_piece,position,usebounds) && this.PieceInBounds(dropHeight.add(dropdirection),_piece,position,usebounds)){

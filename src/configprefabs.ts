@@ -25,13 +25,15 @@ export default class configprefabs{
         _gameConfig.areincreaseresolution = 2*1000/60;
         _gameConfig.lineclearare = 20*1000/60
 
+        _gameConfig.constraints.push(constraints.limbo(19))
+
         _gameConfig.pieceChoice = new RandomPieceGenerator(bagprefabs.arcade);
         _gameConfig.kickSystem = kickSystems.righthanded;
         _gameConfig.queuesize = 1;
         _gameConfig.holdsize = 0;
         _gameConfig.drawGhost = false;
-        _gameConfig.spawnAlignY = alignYType.top;
-        _gameConfig.spawnOffset = new vector2(0,-1);
+        _gameConfig.boardConfig.spawnAlignY = alignYType.top;
+        _gameConfig.boardConfig.spawnOffset = new vector2(0,-1);
         _gameConfig.droughteligible = true;
 
         _gameConfig.name = "master"
@@ -63,8 +65,8 @@ export default class configprefabs{
 
     static get big(){
         let _gameConfig = new gameConfig()
-        _gameConfig.width = 5
-        _gameConfig.height = 10
+        _gameConfig.matrixConfig.width = 5
+        _gameConfig.matrixConfig.height = 10
         _gameConfig.boardscalar = new vector2(2,2)
 
         _gameConfig.name = "big"
@@ -95,16 +97,16 @@ export default class configprefabs{
     static get blockblast(){
         let _gameConfig = new gameConfig()
         _gameConfig.lineclearshiftdown = false;
-        _gameConfig.verticallineclears = true;
-        _gameConfig.activepiecephasethroughblocks = true;
+        _gameConfig.matrixConfig.verticallineclears = true;
+        _gameConfig.boardConfig.activepiecephasethroughblocks = true;
         _gameConfig.allowAirLock = true;
         _gameConfig.allowShiftUp = true;
 
         _gameConfig.usegravity = false;
         _gameConfig.drawGhost = false;
 
-        _gameConfig.width = 8
-        _gameConfig.height = 8
+        _gameConfig.matrixConfig.width = 8
+        _gameConfig.matrixConfig.height = 8
 
         _gameConfig.name = "blast"
 

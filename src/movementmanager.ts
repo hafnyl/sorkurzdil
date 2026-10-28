@@ -192,7 +192,7 @@ export default class MovementManager{
             return Number.POSITIVE_INFINITY
 
         var usebounds = this.board.boundstype
-        if((this.board.boundstype !== boundstype.strict) && this.game.gameConfig.boundlessdropsusefloorbounded && this.board.PieceInBounds(vector2.zero,this.board.activepiece,this.board.activeposition,boundstype.strict))
+        if((this.board.boundstype !== boundstype.strict) && this.game.gameConfig.boardConfig.boundlessdropsusefloorbounded && this.board.PieceInBounds(vector2.zero,this.board.activepiece,this.board.activeposition,boundstype.strict))
             usebounds = boundstype.strict;
 
         var dropHeight = 0
@@ -293,7 +293,7 @@ export default class MovementManager{
         turns = (turns + 4) % 4
 
         var usebounds = this.board.boundstype
-        if((this.board.boundstype !== boundstype.strict) && this.game.gameConfig.boundlessretainboundedkicksbounded && this.board.PieceInBounds(vector2.zero,_piece,position,boundstype.strict))
+        if((this.board.boundstype !== boundstype.strict) && this.game.gameConfig.boardConfig.boundlessretainboundedkicksbounded && this.board.PieceInBounds(vector2.zero,_piece,position,boundstype.strict))
             usebounds = boundstype.strict;
 
         let rotatedPiece = _piece.rotated(turns)
@@ -406,9 +406,9 @@ export default class MovementManager{
 
         var usearr = this.game.userConfig.arr
         if(!inbounds){
-            if(!this.game.gameConfig.dasallowedpastbounds)
+            if(!this.game.gameConfig.boardConfig.dasallowedpastbounds)
                 return
-            if(this.game.gameConfig.dasforcedpastbounds)
+            if(this.game.gameConfig.boardConfig.dasforcedpastbounds)
                 usearr = this.game.gameConfig.arr
         }
 
@@ -420,7 +420,7 @@ export default class MovementManager{
         if(!isFinite(fdasref))
             deltaSteps = this.board.matrix.width
 
-        if(inbounds && this.game.gameConfig.dasstopatbounds){
+        if(inbounds && this.game.gameConfig.boardConfig.dasstopatbounds){
             if(command==Command.ShiftLeft)
                 deltaSteps = Math.max(0,Math.min(deltaSteps,this.board.activeposition.x - this.board.activepiece.extents.west))
             else
@@ -472,7 +472,7 @@ export default class MovementManager{
 
         var northeast = new vector2(bounding.east,bounding.north), southwest = new vector2(bounding.west,bounding.south)
 
-        switch(this.game.gameConfig.spawnAlignY){
+        switch(this.game.gameConfig.boardConfig.spawnAlignY){
             case alignYType.top:
                 spawnlocation = spawnlocation.add(vector2.down.mul(northeast.y))
                 break
@@ -689,7 +689,7 @@ export default class MovementManager{
      * currently only used when the piece falls into the void
     */
     LockLike(){
-        if(this.game.gameConfig.voiddeath){
+        if(this.game.gameConfig.boardConfig.voiddeath){
             this.game.gameOver = true;
             this.board.matrix.Die();
         }
@@ -704,7 +704,7 @@ export default class MovementManager{
             return
         if(!this.board.PieceNoncolliding(vector2.zero,this.board.activepiece,this.board.activeposition) || !this.board.PieceInBounds(vector2.zero,this.board.activepiece,this.board.activeposition))
             return
-        if(this.game.gameConfig.verticallineclears && !this.board.PieceStrictlyInBounds(vector2.zero,this.board.activepiece,this.board.activeposition))
+        if(this.game.gameConfig.matrixConfig.verticallineclears && !this.board.PieceStrictlyInBounds(vector2.zero,this.board.activepiece,this.board.activeposition))
             return
 
         if(earlylock)

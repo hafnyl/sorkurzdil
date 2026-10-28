@@ -61,7 +61,7 @@ _gameConfig.debug = true;
 
 //_gameConfig.Splice(configs.m123)
 
-_gameConfig.width = 4
+_gameConfig.stridefulfirstpiece = true
 //_gameConfig.height = 6
 
 _userConfig.boardGreying = false
@@ -150,7 +150,7 @@ function UpdateMenu(canvas:HTMLCanvasElement,timestamp:number,deltaTime:number){
   ctx.textAlign = "start"; 
   ctx.font = "bold 128px Bytesized";
   ctx.letterSpacing = Math.sin((timestamp - starttime)/3000)**4 * 128 + "px"
-  ctx.fillText("Sul|fir ",400,canvas.height/2-600);
+  ctx.fillText("Sul|fir",400,canvas.height/2-600);
 
   ImageRenderer.DrawImage(ctx,images.sulfir,new vector2(canvas.width/2+400,canvas.height/2-500),new vector2(1000,1000))
 }
@@ -288,6 +288,9 @@ function App() {
             StartGame(debugu,configs.big);
           }}>play big</button>
           <button className='middleleft' style={{top:"70%",left:"10%",transform: "translate(0, -50%)"}} onClick={()=>{
+            StartGame(debugu,configs.allpc28);
+          }}>play 7 pc</button>
+          <button className='middleleft' style={{top:"80%",left:"10%",transform: "translate(0, -50%)"}} onClick={()=>{
             setScene(scenes.menu)
             sfxs.PlayPBobject(sfxs.GetPitch(0,0).withspeed(0.2));
           }}>back</button>

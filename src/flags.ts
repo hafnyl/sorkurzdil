@@ -37,7 +37,7 @@ export default class gameFlags{
 
     waveprogress = 0;
 
-    limbobar = 0;
+    limbobar = Number.POSITIVE_INFINITY;
     sprintbar = 0;
 
     negativeb2bmeter=false;

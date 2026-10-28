@@ -20,6 +20,7 @@ export class BasePieceGenerator{
     bagprefab:piece[];
     randomiser:Randomiser;
     baghash:string;
+    startstride=false;
 
     constructor(bagprefab:piece[]){
         this.bagprefab = bagprefab
@@ -48,14 +49,27 @@ export class BasePieceGenerator{
     }
 
     Choice():piece{
-        const i = Math.floor(this.randomiser.next() * this.workingbag.length);
+        var i = Math.floor(this.randomiser.next() * this.workingbag.length);
+        if(this.startstride){
+            var exhaust = 0
+            while(!this.workingbag[i].strideful){
+                i = Math.floor(this.randomiser.next() * this.workingbag.length);
+                console.log(this.workingbag)
+                exhaust++
+                if(exhaust>3000)
+                    throw new Error("your took too long")
+            }
+        }
         return this.workingbag.splice(i,1)[0]
     }
 
     Next(){
         if(this.workingbag.length <= 0)
             this.Reset()
-        return this.Choice()
+        const _piece = this.Choice()
+        if(this.startstride)
+            this.startstride = false
+        return _piece
     }
 }
 
@@ -108,26 +122,36 @@ export class Fool extends BasePieceGenerator{
     }
 
     Next(): piece {
-
         if(this.repeattrack <= 0)
             this.Reset()
 
+        var _piece:piece
         if(Math.random() <= this.altstrack/this.repeattrack){
             this.altstrack--;
             this.repeattrack--;
 
-            return this.altgen.Next()
+            _piece = this.altgen.Next()
         }else{
             this.repeattrack--;
 
-            return this.normalgen.Next()
+            _piece = this.normalgen.Next()
         }
+        
+        if(this.startstride){
+            this.startstride = false
+            this.altgen.startstride = false
+            this.normalgen.startstride = false
+        }
+
+        return _piece
     }
 }
 
 export class RandomPieceGenerator extends BasePieceGenerator{
     Choice(): piece {
-        const i = Math.floor(this.randomiser.next() * this.bagprefab.length);
+        var i = Math.floor(this.randomiser.next() * this.bagprefab.length);
+        while(!this.workingbag[i].strideful)
+            i = Math.floor(this.randomiser.next() * this.workingbag.length);
         return clone(this.bagprefab[i])
     }
 }

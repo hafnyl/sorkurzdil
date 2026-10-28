@@ -307,8 +307,14 @@ export const constraints = Object.freeze({
         return !_game.flags.negativeb2bmeter;
     },
     "4hpc":function(_game:game){
-        _game.flags.limbobar = 4 - (_game.lines - _game.pc * 4);
+            _game.flags.limbobar = Math.min(_game.flags.limbobar,4 - (_game.lines - _game.pc * 4));
         return _game.board.matrix.effectiveUp - 1 < _game.flags.limbobar
+    },
+    "limbo":function(limboheight:number):constraint{
+        return function (_game:game){
+            _game.flags.limbobar = Math.min(_game.flags.limbobar,limboheight);
+            return _game.board.matrix.effectiveUp - 1 < _game.flags.limbobar
+        }
     },
     "techrashonly":function(_game:game){
         return (_game.lines % 4) == 0;
@@ -368,11 +374,40 @@ export const roundingTypes:{[key:string]:(x:number)=>number} = Object.freeze({
     weighted:weightedRoundoff,
 })
 
+export class matrixConfig{
+    width=10;
+    height=20;
+
+    extendheight = -1; // how high above the height youre allowed to place pieces / youre allowed to move pieces into (-1 is infinite)
+    lowvanishingpoint = 2; // how low below 0 youre allowed to place pieces before they get visually cut off or its counted as falling into the void
+    dynamicvanishingpoint = false; // start measuring low vanishing point from the lowest tile
+    extendclearxrequirement = true; // if boundstype lets you go past the walls you dont rely on going wall to wall for clearing lines, instead you just check the furthest tiles to the left and to the right
+
+    verticallineclears = false;
+}
+
+export class boardConfig{
+    activepiecephasethroughblocks = false;
+    
+    boundstype=boundstype.dynamic;
+    boundlessretainboundedkicksbounded=true; // if the boundstype lets you go past the left and right, but the piece is still within bounds, on rotation you can kick off of the walls
+    boundlessdropsusefloorbounded=true; // if boundstype lets you fall into the void within the walls of the matrix, sonic dropping and harddropping would keep you in bounds (but not softdropping)
+    dasstopatbounds=true; // if its true it makes finesse possible again
+    dasallowedpastbounds=true;
+    dasforcedpastbounds=true; // changes your das to gameconfig.arr because i dont really want to add another arr value
+    voiddeath = true; // you lose if you drop your piece into the void
+    voidare = 750; // are increase after dropping a piece into the void
+    vpcclearsall = true; // performing a pc within the bounds when there are still items outside of bounds will clear the items that are out of bounds (i added this because some tiles are unclearable when youre allowed to place pieces level with the floor or below) (works well with boundtype tower and platform but doesnt go well with wallless, doesnt go well with floorless or actual boundless if airlock is allowed)
+
+    spawnAlignY=alignYType.bottom;
+    spawnOffset:vector2=vector2.zero;
+}
+
 export class gameConfig{
     name="default";
 
-    width=10;
-    height=20;
+    matrixConfig=new matrixConfig();
+    boardConfig =new boardConfig();
 
     kickSystem=kickSystems.sorkurzdil;
     pieceChoice=new BasePieceGenerator(bagprefabs.tetrominos);
@@ -381,9 +416,6 @@ export class gameConfig{
     holds = 1;
     infinitehold = false;
     discardsize = 0;
-
-    spawnAlignY=alignYType.bottom;
-    spawnOffset:vector2=vector2.zero;
 
     forcehandling = false;
     arr=33;
@@ -394,21 +426,6 @@ export class gameConfig{
 
     twoplayer = false;
     swapplayerare = 750;
-
-    boundstype=boundstype.dynamic;
-    boundlessretainboundedkicksbounded=true; // if the boundstype lets you go past the left and right, but the piece is still within bounds, on rotation you can kick off of the walls
-    boundlessdropsusefloorbounded=true; // if boundstype lets you fall into the void within the walls of the matrix, sonic dropping and harddropping would keep you in bounds (but not softdropping)
-    dasstopatbounds=true; // if its true it makes finesse possible again
-    dasallowedpastbounds=true;
-    dasforcedpastbounds=true; // changes your das to gameconfig.arr because i dont really want to add another arr value
-    voiddeath = true; // you lose if you drop your piece into the void
-    voidare = 750; // are increase after dropping a piece into the void
-    vpcclearsall = true; // performing a pc within the bounds when there are still items outside of bounds will clear the items that are out of bounds (i added this because some tiles are unclearable when youre allowed to place pieces level with the floor or below) (works well with boundtype tower and platform but doesnt go well with wallless, doesnt go well with floorless or actual boundless if airlock is allowed)
-    extendclearxrequirement = true; // if boundstype lets you go past the walls you dont rely on going wall to wall for clearing lines, instead you just check the furthest tiles to the left and to the right
-
-    extendheight = -1; // how high above the height youre allowed to place pieces / youre allowed to move pieces into (-1 is infinite)
-    lowvanishingpoint = 2; // how low below 0 youre allowed to place pieces before they get visually cut off or its counted as falling into the void
-    dynamicvanishingpoint = false; // start measuring low vanishing point from the lowest tile
 
     simplescoring:simplescoring = simpleScoringSystems.guideline;
     levelscore = true;
@@ -459,9 +476,6 @@ export class gameConfig{
     linecleartime = 0;
 
     lineclearshiftdown = true;
-    
-    verticallineclears = false;
-    activepiecephasethroughblocks = false;
 
     backfire = 0; //unimplemented
     waveinterval = 2000;
@@ -513,6 +527,8 @@ export class gameConfig{
     allowShiftUp = false;
     allowFlips = false;
     drawGhost = true;
+
+    stridefulfirstpiece=false
 
     boardscalar = vector2.one;
 
