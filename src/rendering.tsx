@@ -302,6 +302,8 @@ export class rendering {
     dynamicText:ReactElement[];
     setDynamicText;
 
+    cleardynamictext?:number;
+
     AlertText(text:string,colour:colour3|colourpossibility,lifespan:number,animation="",bold?:boolean){
         const id = Math.random().toString()
         let ee = createElement("div",
@@ -310,15 +312,12 @@ export class rendering {
                 opacity:0,
                 animation: lifespan.toString() + "s ease-out myAnimation" + animation,
                 fontWeight: bold ? "bold" : "normal",
-            },className:"dynamic",onAnimationEnd:()=>{
-                const a = this.dynamicText.map(e=>{
-                    if(e?.props?.id === id) return null; return e
-                })
-                this.setDynamicText(a)
-                this.dynamicText = a as ReactElement[]
-            }
+            },className:"dynamic"
         },text);
+        if(this.cleardynamictext !== undefined)
+            clearTimeout(this.cleardynamictext)
         this.setDynamicText(this.dynamicText.concat(ee))
+        this.cleardynamictext = lifespan * 1000
     }
 
     Setb2b(){
@@ -664,6 +663,14 @@ export class rendering {
 
         this.particleManager.Update(deltaTime);
         this.particleManager.DrawParticles(this.ctx);
+
+        if(this.cleardynamictext!==undefined){
+            this.cleardynamictext -= deltaTime
+            if(this.cleardynamictext <= 0){
+                this.setDynamicText([])
+                this.cleardynamictext = undefined
+            }
+        }
     }
 
     constructor(_gameManager:gameManager,uiCanvas:HTMLCanvasElement,matrixCanvas:HTMLCanvasElement,aouoaeoa:[ReactElement[],React.Dispatch<ReactElement[]>]){

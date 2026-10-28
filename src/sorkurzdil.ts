@@ -64,7 +64,7 @@ export class game{
             case b2btype.meter:
                 if(this.meter <= 0)
                     return 0
-                return Math.max(1,Math.floor(this.meter/4-1) - 1)
+                return Math.max(1,Math.ceil(this.meter/4-1) - 2)
         }
     }
 
@@ -644,11 +644,13 @@ export class gameManager{
         this.Backfire(attack)
 
         //sound should follow the attack
+        const b2binstrument:3|null = (this.game.backto>1) ? 3 : null
+        console.log(b2binstrument)
         if(lr.spin || lr.immobile || lr.mini){
-            sfxs.PlayPBobject(sfxs.GetPitch(5,Math.min(3,lines) as (0|1|2|3)).withspeed(1 / (2 ** this.game.backto)));
+            sfxs.PlayPBobject(sfxs.GetPitch(b2binstrument!==null ? b2binstrument : 5,Math.min(3,lines) as (0|1|2|3)).withvolume(0.6).withspeed(1 / (2 ** (this.game.backto-2))));
         }else{
             if(lines >= 4)
-                sfxs.PlayPBobject(sfxs.GetSFX(sfx.gunshot1).withspeed(4 / (2 ** (lines - 4))).withvolume(1).withspeed(1 / (1.1 ** this.game.backto)));
+                sfxs.PlayPBobject((b2binstrument!==null ? sfxs.GetPitch(b2binstrument,2) : sfxs.GetSFX(sfx.gunshot1).withvolume(1)).withspeed(4 / (2 ** (lines - 4))).withspeed(1 / (2 ** (this.game.backto-2   ))));
             else if(lines > 0)
                 sfxs.PlayPBobject(sfxs.GetSFX(sfx.gunshot0).withspeed(8));
         }
