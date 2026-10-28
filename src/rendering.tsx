@@ -299,8 +299,8 @@ export class rendering {
     boardtextmargin = 16;
     boardsmalltextmargin = 64;
 
-    dynamicText:ReactElement[];
-    setDynamicText;
+    dynamicText:dynamicTextItem[];
+    setDynamicText:React.Dispatch<dynamicTextItem[]>;
 
     AlertText(text:string,colour:colour3|colourpossibility,lifespan:number,animation="",bold?:boolean){
         const id = Math.random().toString()
@@ -310,15 +310,9 @@ export class rendering {
                 opacity:0,
                 animation: lifespan.toString() + "s ease-out myAnimation" + animation,
                 fontWeight: bold ? "bold" : "normal",
-            },className:"dynamic",onAnimationEnd:()=>{
-                const a = this.dynamicText.map(e=>{
-                    if(e?.props?.id === id) return null; return e
-                })
-                this.setDynamicText(a)
-                this.dynamicText = a as ReactElement[]
-            }
+            },className:"dynamic"
         },text);
-        this.setDynamicText(this.dynamicText.concat(ee))
+        this.setDynamicText(this.dynamicText.concat(new dynamicTextItem(ee,lifespan)))
     }
 
     Setb2b(){
@@ -636,7 +630,7 @@ export class rendering {
         this.particleManager.particles.push(particle)
     }*/
 
-    RenderStep(deltaTime:number,dynamicText:ReactElement[]){
+    RenderStep(deltaTime:number,dynamicText:dynamicTextItem[]){
         const centerX = this.uiCanvas.width/2,centerY = this.uiCanvas.height/2;
         this.origin = new vector2(centerX,centerY);
 
@@ -666,7 +660,7 @@ export class rendering {
         this.particleManager.DrawParticles(this.ctx);
     }
 
-    constructor(_gameManager:gameManager,uiCanvas:HTMLCanvasElement,matrixCanvas:HTMLCanvasElement,aouoaeoa:[ReactElement[],React.Dispatch<ReactElement[]>]){
+    constructor(_gameManager:gameManager,uiCanvas:HTMLCanvasElement,matrixCanvas:HTMLCanvasElement,aouoaeoa:[dynamicTextItem[],React.Dispatch<dynamicTextItem[]>]){
         this.uiCanvas = uiCanvas;
         const ctx = uiCanvas.getContext('2d')
         if(!ctx)
@@ -691,13 +685,24 @@ export class rendering {
     }
 }
 
+export class dynamicTextItem{
+    element:ReactElement;
+    birth:number;
+    lifespan:number;
+    constructor(element:ReactElement,lifespan:number){
+        this.element = element
+        this.lifespan = lifespan
+        this.birth = Date.now()
+    }
+}
+
 export default function GameRenderer({ref}){
     const matrixCanvasRef = useRef<HTMLCanvasElement|null>(null);
     const uiCanvasRef = useRef<HTMLCanvasElement|null>(null);
     
     var renderer = useRef<rendering|null>(null);
     var [initialised,setInitialised]=useState(false);
-    var [dynamicText,setDynamicText]=useState([] as ReactElement[]);
+    var [dynamicText,setDynamicText]=useState([] as dynamicTextItem[]);
     
     useImperativeHandle(ref, ()=>{
         return{
@@ -726,6 +731,6 @@ export default function GameRenderer({ref}){
     return (<>
       <canvas ref={matrixCanvasRef} width="4550" height="2560px"/>
       <canvas ref={uiCanvasRef} width="4550" height="2560px"/>
-      {dynamicText}
+      {dynamicText.map((e)=>{return e.element})}
     </>)
 }
